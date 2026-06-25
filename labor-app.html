@@ -36,10 +36,13 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .day-table td { padding: 5px 3px; text-align: center; border: 1px solid #e8e8e8; color: #333; }
 .day-table td.worked { background: #e3f2fd; color: #1565c0; font-weight: 600; }
 .day-table td.row-label { font-weight: 600; color: #555; background: #fafafa; white-space: nowrap; }
+.day-table th.sun { color: #c62828; }
+.day-table th.sat { color: #1565c0; }
 .site-info { font-size: 12px; color: #999; text-align: right; margin-top: 8px; }
 .worker-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
 .worker-row:last-child { border-bottom: none; }
 .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #e3f2fd; color: #1565c0; font-weight: 600; }
+.badge-job { font-size: 12px; padding: 3px 10px; border-radius: 20px; background: #fff3e0; color: #e65100; font-weight: 600; display: inline-block; margin-bottom: 0.5rem; }
 .upload-area { border: 2px dashed #bbb; border-radius: 10px; padding: 2rem; text-align: center; cursor: pointer; color: #888; font-size: 14px; margin-bottom: 1rem; background: #fafafa; }
 .upload-area:hover { border-color: #185FA5; color: #185FA5; }
 .preview-table-wrap { overflow-x: auto; margin-top: 0.5rem; }
@@ -52,8 +55,6 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .info-box { background: #e3f2fd; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #1565c0; line-height: 1.7; margin-bottom: 1rem; }
-.worker-info { display: flex; gap: 8px; margin-bottom: 0.5rem; }
-.worker-info .badge-job { font-size: 12px; padding: 3px 10px; border-radius: 20px; background: #fff3e0; color: #e65100; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -65,7 +66,6 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     <div class="tab" onclick="showTab('list')">인원 목록</div>
   </div>
 
-  <!-- 작업자 조회 -->
   <div id="screen-worker" class="screen active">
     <div class="card">
       <div class="card-title">본인 공수 조회</div>
@@ -83,7 +83,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     <div id="w-result" style="display:none;">
       <div class="card">
         <div class="card-title" id="w-name-label"></div>
-        <div id="w-job-badge" class="worker-info"></div>
+        <div id="w-job-badge"></div>
         <div class="stat-grid">
           <div class="stat"><div class="val" id="w-total-days">0</div><div class="lbl">출력일수</div></div>
           <div class="stat"><div class="val" id="w-total-work">0</div><div class="lbl">출력공수</div></div>
@@ -97,14 +97,15 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     </div>
   </div>
 
-  <!-- 엑셀 업로드 -->
   <div id="screen-upload" class="screen">
     <div class="card">
       <div class="card-title">엑셀 파일 업로드</div>
       <div class="info-box">
-        엑셀 컬럼 순서 (2행씩 묶음):<br>
-        <strong>번호 | 직종 | 성명 | 비번 | 1일~31일 | 출력일수 | 출력공수</strong><br>
-        윗줄 = 일수, 아랫줄 = 공수
+        엑셀 구조:<br>
+        <strong>A=번호 | B=직종 | C=성명 | D=비번</strong><br>
+        <strong>E~S = 1~15일 (윗줄)</strong><br>
+        <strong>E~T = 16~31일 (아랫줄)</strong><br>
+        한 사람당 2행, 공수값만 입력
       </div>
       <label>현장명</label>
       <input type="text" id="u-site" placeholder="신안산선 매화역 #1번 현장">
@@ -127,7 +128,6 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     </div>
   </div>
 
-  <!-- 인원 목록 -->
   <div id="screen-list" class="screen">
     <div class="card">
       <div class="card-title">등록된 작업자</div>
@@ -193,7 +193,7 @@ async function workerLogin() {
     const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&password=eq.${encodeURIComponent(pass)}&select=id,name,job_type`);
     if (!workers || workers.length === 0) return showMsg('w-msg','이름 또는 비밀번호가 틀렸어요','error');
     const worker = workers[0];
-    const records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=daily_days,daily_work,total_days,total_work,site_name`);
+    const records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=daily_work,total_days,total_work,site_name`);
     if (!records || records.length === 0) return showMsg('w-msg','해당 월의 공수 기록이 없어요','error');
     const rec = records[0];
     document.getElementById('w-msg').className = 'msg';
@@ -210,25 +210,21 @@ async function workerLogin() {
 function renderDayTable(rec, month) {
   const [yr, mo] = month.split('-').map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
-  const days = rec.daily_days || {};
   const works = rec.daily_work || {};
   let header = '<tr><th>구분</th>';
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(yr, mo-1, d).getDay();
-    const style = dow === 0 ? ' style="color:#c62828"' : dow === 6 ? ' style="color:#1565c0"' : '';
-    header += `<th${style}>${d}</th>`;
+    const cls = dow === 0 ? ' class="sun"' : dow === 6 ? ' class="sat"' : '';
+    header += `<th${cls}>${d}</th>`;
   }
   header += '</tr>';
-  let row1 = '<tr><td class="row-label">일수</td>';
-  let row2 = '<tr><td class="row-label">공수</td>';
+  let row = '<tr><td class="row-label">공수</td>';
   for (let d = 1; d <= daysInMonth; d++) {
-    const dv = days[String(d)];
-    const wv = works[String(d)];
-    row1 += dv ? `<td class="worked">${dv}</td>` : '<td></td>';
-    row2 += wv ? `<td class="worked">${wv}</td>` : '<td></td>';
+    const v = works[String(d)];
+    row += v ? `<td class="worked">${v}</td>` : '<td></td>';
   }
-  row1 += '</tr>'; row2 += '</tr>';
-  document.getElementById('w-daytable').innerHTML = header + row1 + row2;
+  row += '</tr>';
+  document.getElementById('w-daytable').innerHTML = header + row;
 }
 
 let parsedWorkers = [];
@@ -250,35 +246,49 @@ function previewExcel(input) {
 function parseWorkers(rows) {
   const workers = [];
   for (let i = 0; i < rows.length - 1; i++) {
-    const row = rows[i];
-    const nextRow = rows[i + 1] || [];
+    const row = rows[i];       // 윗줄: 1~15일 (E~S = col 4~18)
+    const nextRow = rows[i+1] || []; // 아랫줄: 16~31일 (E~T = col 4~19)
     const num = row[0];
     if (!num || isNaN(parseInt(num))) continue;
-    // 번호(0) | 직종(1) | 성명(2) | 비번(3) | 1~31일(4~34) | 출력일수(35) | 출력공수(nextRow)
+
     const job_type = String(row[1] || '').trim();
     const name = String(row[2] || '').trim();
     const password = String(row[3] || '').trim();
     if (!name || !password) continue;
-    const daily_days = {};
+
     const daily_work = {};
-    for (let d = 1; d <= 31; d++) {
-      const colIdx = 3 + d; // 0=번호,1=직종,2=성명,3=비번, 4=1일...
-      const dayVal = parseFloat(row[colIdx]) || 0;
-      const workVal = parseFloat(nextRow[colIdx]) || 0;
-      if (dayVal > 0) daily_days[String(d)] = dayVal;
-      if (workVal > 0) daily_work[String(d)] = workVal;
+    let total_work = 0;
+    let total_days = 0;
+
+    // 윗줄: 1~15일 → col 4~18 (E~S)
+    for (let d = 1; d <= 15; d++) {
+      const val = parseFloat(row[3 + d]) || 0; // col 4=1일, 5=2일 ... 18=15일
+      if (val > 0) {
+        daily_work[String(d)] = val;
+        total_work += val;
+        total_days++;
+      }
     }
-    const total_days = parseFloat(row[35]) || Object.values(daily_days).reduce((a,b) => a+b, 0);
-    const total_work = parseFloat(nextRow[35] || nextRow[36] || row[36]) || Object.values(daily_work).reduce((a,b) => a+b, 0);
-    workers.push({ num: parseInt(num), job_type, name, password, daily_days, daily_work, total_days, total_work });
-    i++;
+
+    // 아랫줄: 16~31일 → col 4~19 (E~T)
+    for (let d = 16; d <= 31; d++) {
+      const val = parseFloat(nextRow[3 + (d - 15)]) || 0; // col 4=16일, 5=17일 ... 19=31일 (최대 16칸)
+      if (val > 0) {
+        daily_work[String(d)] = val;
+        total_work += val;
+        total_days++;
+      }
+    }
+
+    workers.push({ num: parseInt(num), job_type, name, password, daily_work, total_days, total_work });
+    i++; // 아랫줄 스킵
   }
   return workers;
 }
 
 function showPreview(workers) {
   document.getElementById('u-count').textContent = workers.length;
-  let html = '<tr><th>번호</th><th>직종</th><th>성명</th><th>비번</th><th>출력일수</th><th>출력공수</th></tr>';
+  let html = '<tr><th>번호</th><th>직종</th><th>성명</th><th>비번</th><th>일수</th><th>공수</th></tr>';
   workers.forEach(w => {
     html += `<tr><td>${w.num}</td><td>${w.job_type}</td><td>${w.name}</td><td>${w.password}</td><td>${w.total_days}</td><td>${w.total_work.toFixed(1)}</td></tr>`;
   });
@@ -310,7 +320,12 @@ async function uploadToSupabase() {
         worker_id = created[0].id;
       }
       const recExist = await db('GET', 'work_records', null, `worker_id=eq.${worker_id}&site_name=eq.${encodeURIComponent(site_name)}&year_month=eq.${year_month}&select=id`);
-      const payload = { worker_id, site_name, year_month, daily_days: w.daily_days, daily_work: w.daily_work, total_days: w.total_days, total_work: parseFloat(w.total_work.toFixed(2)) };
+      const payload = {
+        worker_id, site_name, year_month,
+        daily_work: w.daily_work,
+        total_days: w.total_days,
+        total_work: parseFloat(w.total_work.toFixed(2))
+      };
       if (recExist && recExist.length > 0) {
         await db('PATCH', `work_records?id=eq.${recExist[0].id}`, payload);
       } else {
@@ -331,7 +346,7 @@ async function uploadToSupabase() {
 async function loadList() {
   const body = document.getElementById('list-body');
   try {
-    const data = await db('GET', 'workers', null, 'select=name,job_type,created_at&order=name');
+    const data = await db('GET', 'workers', null, 'select=name,job_type&order=name');
     if (!data || data.length === 0) { body.innerHTML = '<div style="padding:1rem 0;color:#aaa;">등록된 작업자가 없어요</div>'; return; }
     body.innerHTML = data.map(w => `
       <div class="worker-row">
