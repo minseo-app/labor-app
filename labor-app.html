@@ -10,8 +10,8 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #222; }
 .container { max-width: 520px; margin: 0 auto; padding: 1rem; }
 h1 { font-size: 20px; font-weight: 600; text-align: center; padding: 1.2rem 0 1rem; color: #1a1a1a; }
-.tab-bar { display: flex; gap: 8px; margin-bottom: 1.2rem; }
-.tab { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #888; font-size: 14px; cursor: pointer; text-align: center; font-weight: 500; }
+.tab-bar { display: flex; gap: 6px; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.tab { flex: 1; min-width: 70px; padding: 9px 6px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #888; font-size: 13px; cursor: pointer; text-align: center; font-weight: 500; }
 .tab.active { background: #185FA5; color: #fff; border-color: #185FA5; }
 .screen { display: none; }
 .screen.active { display: block; }
@@ -24,6 +24,8 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .btn { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 1rem; background: #fff; color: #222; font-weight: 600; }
 .btn.primary { background: #185FA5; border-color: #185FA5; color: #fff; }
 .btn.green { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.btn.red { background: #c62828; border-color: #c62828; color: #fff; }
+.btn.sm { padding: 7px 14px; font-size: 13px; width: auto; margin-top: 0; }
 .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-top: 1rem; display: none; }
 .msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
 .msg.error { background: #fdecea; color: #c62828; display: block; }
@@ -55,6 +57,10 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .info-box { background: #e3f2fd; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #1565c0; line-height: 1.7; margin-bottom: 1rem; }
+.site-manage-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 8px; }
+.site-manage-row:last-child { border-bottom: none; }
+.site-name { font-size: 14px; font-weight: 500; flex: 1; }
+.site-meta { font-size: 12px; color: #999; }
 </style>
 </head>
 <body>
@@ -63,9 +69,11 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
   <div class="tab-bar">
     <div class="tab active" onclick="showTab('worker')">공수 조회</div>
     <div class="tab" onclick="showTab('upload')">엑셀 업로드</div>
+    <div class="tab" onclick="showTab('manage')">데이터 관리</div>
     <div class="tab" onclick="showTab('list')">인원 목록</div>
   </div>
 
+  <!-- 작업자 조회 -->
   <div id="screen-worker" class="screen active">
     <div class="card">
       <div class="card-title">본인 공수 조회</div>
@@ -97,15 +105,14 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     </div>
   </div>
 
+  <!-- 엑셀 업로드 -->
   <div id="screen-upload" class="screen">
     <div class="card">
       <div class="card-title">엑셀 파일 업로드</div>
       <div class="info-box">
-        엑셀 구조 (1~3행 헤더, 4행부터 데이터):<br>
-        <strong>A=번호 | B=직종 | C=성명 | D=비번</strong><br>
-        <strong>E~S = 1~15일 (윗줄)</strong><br>
-        <strong>E~T = 16~31일 (아랫줄)</strong><br>
-        <strong>U=공수합계 | V=일수합계</strong>
+        A=번호 | B=직종 | C=성명 | D=비번<br>
+        E~S = 1~15일 (윗줄) / E~T = 16~31일 (아랫줄)<br>
+        U=공수합계 | V=일수합계 (1~3행 헤더)
       </div>
       <label>현장명</label>
       <input type="text" id="u-site" placeholder="신안산선 매화역 #1번 현장">
@@ -113,8 +120,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
       <input type="month" id="u-month">
       <div class="upload-area" onclick="document.getElementById('u-file').click()">
         <input type="file" id="u-file" accept=".xlsx,.xls" onchange="previewExcel(this)">
-        📂 엑셀 파일을 클릭해서 선택하세요<br>
-        <span style="font-size:12px;">(.xlsx, .xls 지원)</span>
+        📂 엑셀 파일을 클릭해서 선택하세요
       </div>
       <div id="u-preview" style="display:none;">
         <div class="card-title"><span id="u-count">0</span>명 미리보기</div>
@@ -128,6 +134,31 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     </div>
   </div>
 
+  <!-- 데이터 관리 -->
+  <div id="screen-manage" class="screen">
+    <div class="card">
+      <div class="card-title">현장별 데이터 관리</div>
+      <div style="font-size:13px;color:#666;margin-bottom:1rem;">현장+월 단위로 데이터를 삭제할 수 있어요</div>
+      <label>현장 선택</label>
+      <select id="m-site" onchange="loadMonths()"><option value="">-- 현장 선택 --</option></select>
+      <label>월 선택</label>
+      <select id="m-month"><option value="">-- 월 선택 --</option></select>
+      <button class="btn" style="margin-top:1rem;" onclick="previewDelete()">조회하기</button>
+      <div id="m-preview" style="display:none; margin-top:1rem;">
+        <div style="background:#fdecea;border-radius:8px;padding:12px;font-size:13px;color:#c62828;margin-bottom:1rem;">
+          ⚠️ <strong id="m-count">0</strong>명의 데이터가 삭제됩니다. 복구 불가!
+        </div>
+        <button class="btn red" onclick="deleteData()">🗑️ 삭제하기</button>
+      </div>
+      <div id="m-msg" class="msg"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">현장 목록</div>
+      <div id="site-list-body" style="font-size:14px;color:#888;">불러오는 중...</div>
+    </div>
+  </div>
+
+  <!-- 인원 목록 -->
   <div id="screen-list" class="screen">
     <div class="card">
       <div class="card-title">등록된 작업자</div>
@@ -154,7 +185,7 @@ async function db(method, table, body, params) {
     body: body ? JSON.stringify(body) : undefined
   });
   if (!res.ok) { const e = await res.json(); throw new Error(e.message || JSON.stringify(e)); }
-  if (res.status === 204 || method === 'PATCH') return null;
+  if (res.status === 204 || method === 'PATCH' || method === 'DELETE') return null;
   return res.json();
 }
 
@@ -165,22 +196,88 @@ function showMsg(id, text, type) {
 }
 
 function showTab(tab) {
-  ['worker','upload','list'].forEach((t,i) => {
+  ['worker','upload','manage','list'].forEach((t,i) => {
     document.querySelectorAll('.tab')[i].classList.toggle('active', t === tab);
     document.getElementById('screen-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'list') loadList();
   if (tab === 'worker') loadSites();
+  if (tab === 'manage') loadManageSites();
 }
 
 async function loadSites() {
   try {
     const data = await db('GET', 'work_records', null, 'select=site_name');
-    const sites = [...new Set(data.map(d => d.site_name))];
+    const sites = [...new Set(data.map(d => d.site_name))].sort();
     const sel = document.getElementById('w-site');
     sel.innerHTML = '<option value="">-- 현장 선택 --</option>';
     sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
   } catch(e) {}
+}
+
+async function loadManageSites() {
+  try {
+    const data = await db('GET', 'work_records', null, 'select=site_name,year_month');
+    const sites = [...new Set(data.map(d => d.site_name))].sort();
+    const sel = document.getElementById('m-site');
+    sel.innerHTML = '<option value="">-- 현장 선택 --</option>';
+    sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
+
+    // 현장 목록 표시
+    const siteMonths = {};
+    data.forEach(d => {
+      if (!siteMonths[d.site_name]) siteMonths[d.site_name] = new Set();
+      siteMonths[d.site_name].add(d.year_month);
+    });
+    const body = document.getElementById('site-list-body');
+    if (sites.length === 0) { body.innerHTML = '<div style="color:#aaa;padding:1rem 0;">데이터 없음</div>'; return; }
+    body.innerHTML = sites.map(s => `
+      <div class="site-manage-row">
+        <div>
+          <div class="site-name">${s}</div>
+          <div class="site-meta">${[...siteMonths[s]].sort().join(', ')}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function loadMonths() {
+  const site = document.getElementById('m-site').value;
+  const sel = document.getElementById('m-month');
+  sel.innerHTML = '<option value="">-- 월 선택 --</option>';
+  document.getElementById('m-preview').style.display = 'none';
+  if (!site) return;
+  try {
+    const data = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&select=year_month`);
+    const months = [...new Set(data.map(d => d.year_month))].sort();
+    months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+  } catch(e) {}
+}
+
+async function previewDelete() {
+  const site = document.getElementById('m-site').value;
+  const month = document.getElementById('m-month').value;
+  if (!site || !month) return showMsg('m-msg', '현장과 월을 선택해주세요', 'error');
+  try {
+    const data = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id`);
+    document.getElementById('m-count').textContent = data.length;
+    document.getElementById('m-preview').style.display = 'block';
+    document.getElementById('m-msg').className = 'msg';
+  } catch(e) { showMsg('m-msg', e.message, 'error'); }
+}
+
+async function deleteData() {
+  const site = document.getElementById('m-site').value;
+  const month = document.getElementById('m-month').value;
+  if (!confirm(`${site} · ${month} 데이터를 정말 삭제할까요?`)) return;
+  try {
+    await db('DELETE', `work_records?site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}`);
+    showMsg('m-msg', `삭제 완료!`, 'success');
+    document.getElementById('m-preview').style.display = 'none';
+    document.getElementById('m-month').innerHTML = '<option value="">-- 월 선택 --</option>';
+    loadManageSites();
+    loadSites();
+  } catch(e) { showMsg('m-msg', e.message, 'error'); }
 }
 
 async function workerLogin() {
@@ -245,59 +342,36 @@ function previewExcel(input) {
 
 function parseWorkers(rows) {
   const workers = [];
-  // 1~3행은 헤더 → index 0,1,2 스킵, index 3(4행)부터 시작
-  // 한 사람당 2행씩 (윗줄/아랫줄)
-  let i = 3;
+  let i = 3; // 1~3행 헤더 스킵
   while (i < rows.length - 1) {
-    const topRow = rows[i];       // 윗줄: 번호,직종,성명,비번 + 1~15일
-    const botRow = rows[i+1] || []; // 아랫줄: 16~31일
-
+    const topRow = rows[i];
+    const botRow = rows[i+1] || [];
     const num = topRow[0];
-    // 번호가 숫자가 아니면 (합계행 등) 스킵
     if (!num || isNaN(parseInt(num))) { i += 2; continue; }
-
     const job_type = String(topRow[1] || '').trim();
     const name = String(topRow[2] || '').trim();
     const password = String(topRow[3] || '').trim();
     if (!name || !password) { i += 2; continue; }
-
     const daily_work = {};
     let total_work = 0;
     let total_days = 0;
-
-    // 윗줄: 1~15일 → E~S = col index 4~18
+    // 윗줄: 1~15일 → col 4~18
     for (let d = 1; d <= 15; d++) {
-      const val = parseFloat(topRow[3 + d]) || 0; // col4=1일, col5=2일...col18=15일
-      if (val > 0) {
-        daily_work[String(d)] = val;
-        total_work += val;
-        total_days++;
-      }
+      const val = parseFloat(topRow[3 + d]) || 0;
+      if (val > 0) { daily_work[String(d)] = val; total_work += val; total_days++; }
     }
-
-    // 아랫줄: 16~31일 → E~T = col index 4~19 (최대 16칸)
+    // 아랫줄: 16~31일 → col 4~19
     for (let d = 16; d <= 31; d++) {
-      const colIdx = 4 + (d - 16); // col4=16일, col5=17일...col19=31일
-      const val = parseFloat(botRow[colIdx]) || 0;
-      if (val > 0) {
-        daily_work[String(d)] = val;
-        total_work += val;
-        total_days++;
-      }
+      const val = parseFloat(botRow[4 + (d - 16)]) || 0;
+      if (val > 0) { daily_work[String(d)] = val; total_work += val; total_days++; }
     }
-
-    // U열(index 20)=공수합계, V열(index 21)=일수합계 (엑셀값 우선)
     const excelWork = parseFloat(topRow[20]) || 0;
     const excelDays = parseFloat(topRow[21]) || 0;
-
     workers.push({
-      num: parseInt(num),
-      job_type, name, password,
-      daily_work,
+      num: parseInt(num), job_type, name, password, daily_work,
       total_work: excelWork > 0 ? excelWork : parseFloat(total_work.toFixed(2)),
       total_days: excelDays > 0 ? excelDays : total_days
     });
-
     i += 2;
   }
   return workers;
@@ -344,10 +418,7 @@ async function uploadToSupabase() {
         await db('POST', 'work_records', payload);
       }
       success++;
-    } catch(e) {
-      console.error(w.name, e);
-      fail++;
-    }
+    } catch(e) { console.error(w.name, e); fail++; }
   }
   document.getElementById('u-bar').style.width = '100%';
   btn.innerHTML = '✅ 저장 완료';
