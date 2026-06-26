@@ -148,8 +148,12 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
         <label>년월</label>
         <input type="month" id="u-month">
         <div class="upload-area" onclick="document.getElementById('u-file').click()">
-          <input type="file" id="u-file" accept=".xlsx,.xls" onchange="previewExcel(this)">
+          <input type="file" id="u-file" accept=".xlsx,.xls" onchange="loadExcelSheets(this)">
           📂 엑셀 파일을 클릭해서 선택하세요
+        </div>
+        <div id="u-sheet-wrap" style="display:none;">
+          <label>시트 선택 (데이터가 있는 시트를 골라주세요)</label>
+          <select id="u-sheet" onchange="previewSelectedSheet()"></select>
         </div>
         <div id="u-preview" style="display:none;">
           <div class="card-title"><span id="u-count">0</span>명 미리보기</div>
@@ -450,18 +454,42 @@ let allWorkers = [];
 let allSites = [];
 let allMonths = [];
 
-function previewExcel(input) {
+let loadedWorkbook = null;
+
+function loadExcelSheets(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
-    const wb = XLSX.read(e.target.result, { type: 'binary' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    parsedWorkers = parseWorkers(raw);
-    showPreview(parsedWorkers);
+    loadedWorkbook = XLSX.read(e.target.result, { type: 'binary' });
+    const sel = document.getElementById('u-sheet');
+    sel.innerHTML = '';
+    loadedWorkbook.SheetNames.forEach(name => {
+      sel.innerHTML += `<option value="${name}">${name}</option>`;
+    });
+    document.getElementById('u-sheet-wrap').style.display = 'block';
+    // 시트명에 데이터 있을만한 시트 자동 선택 (헤더에 핸드폰번호 있는 시트 우선)
+    let bestSheet = loadedWorkbook.SheetNames[0];
+    for (const name of loadedWorkbook.SheetNames) {
+      const ws = loadedWorkbook.Sheets[name];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // 1행에 핸드폰번호 라는 글자가 있으면 그 시트 선택
+      const firstRows = JSON.stringify(raw.slice(0, 4));
+      if (firstRows.includes('핸드폰')) { bestSheet = name; break; }
+    }
+    sel.value = bestSheet;
+    previewSelectedSheet();
   };
   reader.readAsBinaryString(file);
+}
+
+function previewSelectedSheet() {
+  if (!loadedWorkbook) return;
+  const sheetName = document.getElementById('u-sheet').value;
+  const ws = loadedWorkbook.Sheets[sheetName];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  parsedWorkers = parseWorkers(raw);
+  showPreview(parsedWorkers);
 }
 
 function parseWorkers(rows) {
