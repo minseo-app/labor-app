@@ -38,6 +38,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .day-table th { background: #f0f0f0; padding: 5px 3px; text-align: center; font-weight: 600; color: #555; border: 1px solid #e0e0e0; min-width: 22px; }
 .day-table td { padding: 5px 3px; text-align: center; border: 1px solid #e8e8e8; color: #333; }
 .day-table td.worked { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+.day-table td.red-cell { background: #ffebee; color: #d32f2f; font-weight: 700; }
 .day-table td.row-label { font-weight: 600; color: #555; background: #fafafa; white-space: nowrap; padding: 5px 8px; }
 .day-table th.sun { color: #c62828; }
 .day-table th.sat { color: #1565c0; }
@@ -773,18 +774,65 @@ async function loadWorkerDetail(workerId, idx) {
   const dataDiv = document.getElementById(`ddata-${idx}`);
   if (!site || !month) { dataDiv.innerHTML = ''; return; }
   try {
-    const records = await db('GET', 'work_records', null, `worker_id=eq.${workerId}&site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=daily_work,total_days,total_work`);
+    const records = await db('GET', 'work_records', null, `worker_id=eq.${workerId}&site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,daily_work,total_days,total_work,red_days`);
     if (!records || records.length === 0) { dataDiv.innerHTML = '<div style="font-size:13px;color:#999;padding:6px 0;">기록 없음</div>'; return; }
     const rec = records[0];
+    // 전역에 현재 편집중인 기록 저장
+    window._editRec = window._editRec || {};
+    window._editRec[idx] = { recordId: rec.id, daily_work: rec.daily_work || {}, red_days: rec.red_days || {}, month };
     const tableId = `dtable-${idx}`;
     dataDiv.innerHTML = `
       <div style="display:flex;gap:12px;margin:8px 0;">
         <div style="font-size:13px;"><span style="color:#888;">일수</span> <strong style="color:#185FA5;">${rec.total_days}</strong></div>
         <div style="font-size:13px;"><span style="color:#888;">공수</span> <strong style="color:#185FA5;">${parseFloat(rec.total_work).toFixed(1)}</strong></div>
       </div>
-      <div style="overflow-x:auto;"><table class="day-table" id="${tableId}"></table></div>`;
-    renderDayTable(tableId, rec.daily_work, month);
+      <div style="font-size:12px;color:#e65100;background:#fff3e0;padding:8px 10px;border-radius:8px;margin-bottom:8px;">
+        💡 공수 칸을 <strong>클릭</strong>하면 빨간색(특이사항)으로 표시돼요. 다시 누르면 해제!
+      </div>
+      <div style="overflow-x:auto;"><table class="day-table" id="${tableId}"></table></div>
+      <button class="btn primary" style="margin-top:10px;padding:9px;font-size:13px;" onclick="saveRedDays(${idx})">💾 빨간색 표시 저장</button>
+      <div id="red-msg-${idx}" class="msg" style="margin-top:8px;"></div>`;
+    renderEditableDayTable(tableId, idx);
   } catch(e) { document.getElementById(`ddata-${idx}`).innerHTML = `<div style="color:#c62828;font-size:13px;">${e.message}</div>`; }
+}
+
+function renderEditableDayTable(tableId, idx) {
+  const data = window._editRec[idx];
+  const [yr, mo] = data.month.split('-').map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const works = data.daily_work || {};
+  const reds = data.red_days || {};
+  let header = '<tr><th>구분</th>';
+  for (let d = 1; d <= daysInMonth; d++) header += `<th>${d}</th>`;
+  header += '</tr>';
+  let row = '<tr><td class="row-label">공수</td>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const v = works[String(d)];
+    if (v) {
+      const isRed = reds[String(d)];
+      const cls = isRed ? 'red-cell' : 'worked';
+      row += `<td class="${cls}" style="cursor:pointer;" onclick="toggleRed(${idx},${d})">${v}</td>`;
+    } else {
+      row += '<td></td>';
+    }
+  }
+  document.getElementById(tableId).innerHTML = header + row + '</tr>';
+}
+
+function toggleRed(idx, day) {
+  const data = window._editRec[idx];
+  const key = String(day);
+  if (data.red_days[key]) { delete data.red_days[key]; }
+  else { data.red_days[key] = true; }
+  renderEditableDayTable(`dtable-${idx}`, idx);
+}
+
+async function saveRedDays(idx) {
+  const data = window._editRec[idx];
+  try {
+    await db('PATCH', `work_records?id=eq.${data.recordId}`, { red_days: data.red_days });
+    showMsg(`red-msg-${idx}`, '빨간색 표시 저장 완료!', 'success');
+  } catch(e) { showMsg(`red-msg-${idx}`, '오류: ' + e.message, 'error'); }
 }
 
 async function loadStatSites() {
@@ -930,6 +978,7 @@ function buildPaySlipHTML(worker, rec, month, company) {
   const [yr, mo] = month.split('-').map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
   const works = rec.daily_work || {};
+  const redDays = rec.red_days || {};
   const lastDay = String(daysInMonth).padStart(2,'0');
   const periodStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
   const periodEnd = `${yr}-${String(mo).padStart(2,'0')}-${lastDay}`;
@@ -937,11 +986,11 @@ function buildPaySlipHTML(worker, rec, month, company) {
   function dayCells(start, end) {
     let numRow = '', valRow = '';
     for (let d = start; d <= end; d++) {
-      const dow = new Date(yr, mo-1, d).getDay();
-      const color = dow === 0 ? 'color:#d32f2f;' : '';
-      numRow += `<td style="${color}">${d}</td>`;
+      numRow += `<td>${d}</td>`;
       const v = works[String(d)];
-      valRow += `<td>${v ? v.toFixed(2) : ''}</td>`;
+      const isRed = redDays[String(d)];
+      const style = isRed ? ' style="color:#d32f2f;font-weight:bold;"' : '';
+      valRow += `<td${style}>${v ? v.toFixed(2) : ''}</td>`;
     }
     const cols = end - start + 1;
     for (let k = cols; k < 16; k++) { numRow += '<td style="background:#e0e0e0;"></td>'; valRow += '<td style="background:#e0e0e0;"></td>'; }
@@ -992,7 +1041,7 @@ async function generatePaySlips() {
   btn.disabled = true;
 
   try {
-    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name`);
+    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name,red_days`);
     const workers = await db('GET', 'workers', null, 'select=id,name,job_type');
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
 
