@@ -100,7 +100,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0627-E (선택합계·차단)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0627-F (전체선택 토글)</div>
   <div class="tab-bar">
     <div class="tab active" onclick="showTab('worker')">공수조회</div>
     <div class="tab" onclick="showTab('upload')">업로드</div>
@@ -766,8 +766,7 @@ function renderEditTable() {
     왼쪽 <strong>체크박스</strong>로 선택하면 아래에 선택 합계가 나와요. 수정 후 <strong>저장</strong> 필수!
   </div>`;
   html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
-    <button class="lock-btn" onclick="edCheckAll(true)">전체선택</button>
-    <button class="lock-btn" onclick="edCheckAll(false)">전체해제</button>
+    <button class="lock-btn" id="ed-toggle-btn" onclick="edToggleAll()">전체선택</button>
   </div>`;
   html += '<div style="overflow-x:auto;"><table class="edit-table"><tr><th class="sticky-col">✓</th><th>번호</th><th>성명</th><th>직종</th><th>일당</th>';
   for (let d = 1; d <= daysInMonth; d++) html += `<th>${d}</th>`;
@@ -823,8 +822,12 @@ function renderEditTable() {
   updateSelSum(); // 합계행 + 직종표 초기화
 }
 
-function edCheckAll(on) {
-  document.querySelectorAll('.ed-check').forEach(c => c.checked = on);
+function edToggleAll() {
+  const boxes = [...document.querySelectorAll('.ed-check')];
+  const allOn = boxes.length > 0 && boxes.every(c => c.checked);
+  boxes.forEach(c => c.checked = !allOn);
+  const btn = document.getElementById('ed-toggle-btn');
+  if (btn) btn.textContent = allOn ? '전체선택' : '전체해제';
   updateSelSum();
 }
 
@@ -912,6 +915,13 @@ function updateSelSum() {
 
   // 직종별 일별 인원수 (선택 기준)
   renderJobDaySummary(active);
+
+  // 토글 버튼 라벨 동기화
+  const tbtn = document.getElementById('ed-toggle-btn');
+  if (tbtn) {
+    const boxes = [...document.querySelectorAll('.ed-check')];
+    tbtn.textContent = (boxes.length > 0 && boxes.every(c => c.checked)) ? '전체해제' : '전체선택';
+  }
 }
 
 function refreshAmount(pi) {
