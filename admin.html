@@ -169,7 +169,11 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
         <label>회사명</label>
         <input type="text" id="u-company" placeholder="주식회사 네오시티">
         <label>현장명</label>
-        <input type="text" id="u-site" placeholder="신안산선 매화역 #1번 현장">
+        <select id="u-site-pick" onchange="pickUploadSite(this.value)" style="margin-bottom:8px;">
+          <option value="">-- 기존 현장에서 선택 --</option>
+          <option value="__new__">＋ 새 현장 직접 입력</option>
+        </select>
+        <input type="text" id="u-site" placeholder="현장명 (위에서 고르거나 직접 입력)">
         <label>년월</label>
         <input type="month" id="u-month">
         <div class="upload-area" onclick="document.getElementById('u-file').click()">
@@ -406,6 +410,7 @@ function adminUnlock(tab) {
   if (tab === 'list') loadList();
   if (tab === 'stats') loadStatSites();
   if (tab === 'payslip') loadPaySlipSites();
+  loadUploadSites();
   revealWorkerAdminBox();
 }
 
@@ -439,6 +444,25 @@ async function loadAdminWorkerSites() {
     sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
     if (cur) sel.value = cur;
   } catch(e) {}
+}
+
+async function loadUploadSites() {
+  const sel = document.getElementById('u-site-pick');
+  if (!sel) return;
+  try {
+    const data = await db('GET', 'work_records', null, 'select=site_name');
+    const sites = [...new Set(data.map(d => d.site_name))].sort();
+    sel.innerHTML = '<option value="">-- 기존 현장에서 선택 --</option>';
+    sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
+    sel.innerHTML += '<option value="__new__">＋ 새 현장 직접 입력</option>';
+  } catch(e) {}
+}
+
+function pickUploadSite(v) {
+  const input = document.getElementById('u-site');
+  if (!input) return;
+  if (v === '__new__') { input.value = ''; input.focus(); }
+  else if (v) { input.value = v; }
 }
 
 async function loadAdminWorkerMonths() {
@@ -529,6 +553,7 @@ function showTab(tab) {
     if (tab === 'list') loadList();
     if (tab === 'stats') loadStatSites();
     if (tab === 'payslip') loadPaySlipSites();
+    if (tab === 'upload') loadUploadSites();
   }
 }
 
