@@ -117,20 +117,17 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
       <div class="card">
         <div class="card-title">⚙️ 작업자 이력 표시 <span style="font-weight:400;color:#999;font-size:12px;">· 관리자 전용</span></div>
         <label>작업자가 조회할 때 보이는 범위</label>
-        <select id="w-hist-mode" onchange="setHistoryMode(this.value)">
+        <select id="w-hist-mode" onchange="onHistModeChange(this.value)">
           <option value="all">전체 근무 이력 보여주기</option>
-          <option value="recent">최근 월만 보여주기</option>
+          <option value="period">특정 현장·월만 보여주기</option>
         </select>
-        <div style="border-top:1px solid #eee;margin:1.2rem 0 0;"></div>
-        <div class="card-title" style="font-size:14px;margin:1rem 0 0.3rem;">특정 현장·월 직접 조회 <span style="font-weight:400;color:#999;font-size:12px;">· 작업자에게 보여줄 때</span></div>
-        <label>현장 선택</label>
-        <select id="aw-site" onchange="loadAdminWorkerMonths()"><option value="">-- 현장 선택 --</option></select>
-        <label>월 선택</label>
-        <select id="aw-month"><option value="">-- 월 선택 --</option></select>
-        <label>작업자 이름</label>
-        <input type="text" id="aw-name" placeholder="홍길동">
-        <button class="btn primary" onclick="adminWorkerLookup()">선택 조회</button>
-        <div id="aw-msg" class="msg"></div>
+        <div id="hist-period-box" style="display:none;">
+          <label>현장</label>
+          <select id="hist-site" onchange="onHistSiteChange(this.value)"><option value="">-- 현장 선택 --</option></select>
+          <label>월</label>
+          <select id="hist-month" onchange="onHistMonthChange(this.value)"><option value="">-- 월 선택 --</option></select>
+        </div>
+        <div id="hist-msg" class="msg"></div>
       </div>
     </div>
     <!-- 작업자용 (공개) -->
@@ -430,20 +427,7 @@ function revealWorkerAdminBox() {
   const box = document.getElementById('worker-admin-box');
   if (!box) return;
   box.style.display = window._adminUnlocked ? 'block' : 'none';
-  if (window._adminUnlocked) loadAdminWorkerSites();
-}
-
-async function loadAdminWorkerSites() {
-  const sel = document.getElementById('aw-site');
-  if (!sel) return;
-  try {
-    const data = await db('GET', 'work_records', null, 'select=site_name');
-    const sites = [...new Set(data.map(d => d.site_name))].sort();
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">-- 현장 선택 --</option>';
-    sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
-    if (cur) sel.value = cur;
-  } catch(e) {}
+  if (window._adminUnlocked) refreshHistUI();
 }
 
 async function loadUploadSites() {
@@ -465,36 +449,6 @@ function pickUploadSite(v) {
   else if (v) { input.value = v; }
 }
 
-async function loadAdminWorkerMonths() {
-  const site = document.getElementById('aw-site').value;
-  const sel = document.getElementById('aw-month');
-  sel.innerHTML = '<option value="">-- 월 선택 --</option>';
-  if (!site) return;
-  try {
-    const data = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&select=year_month`);
-    [...new Set(data.map(d => d.year_month))].sort().reverse().forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
-  } catch(e) {}
-}
-
-async function adminWorkerLookup() {
-  const site = document.getElementById('aw-site').value;
-  const month = document.getElementById('aw-month').value;
-  const name = document.getElementById('aw-name').value.trim();
-  if (!site || !month || !name) return showMsg('aw-msg', '현장·월·이름을 모두 선택/입력해주세요', 'error');
-  try {
-    const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&select=id,name,job_type`);
-    if (!workers || workers.length === 0) return showMsg('aw-msg', '그 이름의 작업자가 없어요', 'error');
-    let found = null, rec = null;
-    for (const w of workers) {
-      const recs = await db('GET', 'work_records', null, `worker_id=eq.${w.id}&site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=daily_work,total_days,total_work,site_name,year_month,red_days`);
-      if (recs && recs.length) { found = w; rec = recs[0]; break; }
-    }
-    if (!rec) return showMsg('aw-msg', '해당 현장·월에 그 작업자 기록이 없어요', 'error');
-    document.getElementById('aw-msg').className = 'msg';
-    renderWorkerResult(found, [rec]);
-  } catch(e) { showMsg('aw-msg', e.message, 'error'); }
-}
-
 function toggleCard(key) {
   const body = document.getElementById('body-' + key);
   const arrow = document.getElementById('arrow-' + key);
@@ -504,23 +458,93 @@ function toggleCard(key) {
   if (arrow) arrow.textContent = isOpen ? '▼ 펼치기' : '▲ 접기';
 }
 
-// 작업자 이력 표시 모드 (전체 / 최근월) — DB(app_settings)에 저장해서 작업자 폰에도 반영
-const HIST_MODE_KEY = 'worker_hist_mode';
-let _histMode = localStorage.getItem(HIST_MODE_KEY) || 'all';
+// 작업자 이력 표시 범위 — DB(app_settings)에 저장해서 작업자 폰에도 반영
+// _histMode: 'all'(전체) | 'period'(특정 현장·월)
+let _histMode = localStorage.getItem('worker_hist_mode') || 'all';
+let _histSite = '';
+let _histMonth = '';
 function getHistoryMode() { return _histMode; }
-async function setHistoryMode(v) {
-  _histMode = v;
-  localStorage.setItem(HIST_MODE_KEY, v);
-  try { await db('PATCH', `app_settings?key=eq.worker_hist_mode`, { value: v }); }
-  catch(e) { console.warn('설정 DB 저장 실패(작업자 폰 동기화 안 될 수 있음):', e.message); }
+
+// app_settings 에 upsert (테이블 없으면 에러 → 화면에 안내)
+async function saveSetting(key, value) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/app_settings?on_conflict=key`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ key, value })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || '저장 실패'); }
 }
-async function loadHistModeFromDB() {
+
+async function persistHistSettings() {
+  localStorage.setItem('worker_hist_mode', _histMode);
   try {
-    const rows = await db('GET', 'app_settings', null, 'key=eq.worker_hist_mode&select=value');
-    if (rows && rows.length) { _histMode = rows[0].value || 'all'; localStorage.setItem(HIST_MODE_KEY, _histMode); }
+    await saveSetting('worker_hist_mode', _histMode);
+    await saveSetting('worker_hist_site', _histSite);
+    await saveSetting('worker_hist_month', _histMonth);
+    const label = _histMode === 'all' ? '전체 이력' : `${_histSite || '(현장 미선택)'} · ${_histMonth || '(월 미선택)'}`;
+    showMsg('hist-msg', `✅ 저장됨 — 작업자에게 [${label}] 적용돼요`, 'success');
+  } catch(e) {
+    showMsg('hist-msg', `⚠️ DB 저장 실패: ${e.message}\n→ app_settings 테이블 SQL을 먼저 실행해야 작업자 폰에 적용돼요`, 'error');
+  }
+}
+
+async function onHistModeChange(v) {
+  _histMode = v;
+  document.getElementById('hist-period-box').style.display = (v === 'period') ? 'block' : 'none';
+  if (v === 'period') await loadHistSites();
+  await persistHistSettings();
+}
+async function onHistSiteChange(v) {
+  _histSite = v; _histMonth = '';
+  await loadHistMonths();
+  await persistHistSettings();
+}
+async function onHistMonthChange(v) {
+  _histMonth = v;
+  await persistHistSettings();
+}
+
+async function loadHistSites() {
+  const sel = document.getElementById('hist-site');
+  if (!sel) return;
+  try {
+    const data = await db('GET', 'work_records', null, 'select=site_name');
+    const sites = [...new Set(data.map(d => d.site_name))].sort();
+    sel.innerHTML = '<option value="">-- 현장 선택 --</option>';
+    sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
+    sel.value = _histSite;
   } catch(e) {}
-  const sel = document.getElementById('w-hist-mode');
-  if (sel) sel.value = _histMode;
+}
+async function loadHistMonths() {
+  const sel = document.getElementById('hist-month');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- 월 선택 --</option>';
+  if (!_histSite) return;
+  try {
+    const data = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(_histSite)}&select=year_month`);
+    [...new Set(data.map(d => d.year_month))].sort().reverse().forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+    sel.value = _histMonth;
+  } catch(e) {}
+}
+
+async function loadHistSettings() {
+  try {
+    const rows = await db('GET', 'app_settings', null, 'key=in.(worker_hist_mode,worker_hist_site,worker_hist_month)&select=key,value');
+    if (rows) rows.forEach(r => {
+      if (r.key === 'worker_hist_mode') _histMode = r.value || 'all';
+      if (r.key === 'worker_hist_site') _histSite = r.value || '';
+      if (r.key === 'worker_hist_month') _histMonth = r.value || '';
+    });
+  } catch(e) {}
+}
+
+async function refreshHistUI() {
+  await loadHistSettings();
+  const m = document.getElementById('w-hist-mode');
+  if (m) m.value = _histMode;
+  const box = document.getElementById('hist-period-box');
+  if (box) box.style.display = (_histMode === 'period') ? 'block' : 'none';
+  if (_histMode === 'period') { await loadHistSites(); await loadHistMonths(); }
 }
 
 function changePassword() {
@@ -830,8 +854,11 @@ async function workerLogin() {
     let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days&order=year_month.desc`);
     if (!records || records.length === 0) return showMsg('w-msg','근무 기록이 없어요','error');
     document.getElementById('w-msg').className = 'msg';
-    // 관리자 설정: 전체 / 최근월만
-    if (getHistoryMode() === 'recent') records = records.slice(0, 1);
+    // 관리자 설정: 전체 / 특정 현장·월
+    if (_histMode === 'period') {
+      records = records.filter(r => (!_histSite || r.site_name === _histSite) && (!_histMonth || r.year_month === _histMonth));
+    }
+    if (records.length === 0) return showMsg('w-msg','공개된 현장·월에 해당하는 기록이 없어요','error');
     renderWorkerResult(worker, records);
   } catch(e) { showMsg('w-msg', e.message, 'error'); }
 }
@@ -1501,7 +1528,7 @@ function getPaySlipStyle() {
 const now = new Date();
 const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 document.getElementById('u-month').value = ym;
-loadHistModeFromDB();
+loadHistSettings();
 loadSites();
 </script>
 </body>
