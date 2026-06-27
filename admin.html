@@ -48,8 +48,11 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .edit-table .edit-cell { background: #fff; }
 .edit-table .edit-cell.red-cell { background: #ffebee; }
 .edit-table .edit-cell input { padding: 6px 2px; }
-.edit-table .sticky-col { position: sticky; left: 0; background: #fafafa; z-index: 1; min-width: 60px; padding: 5px 8px; }
-.edit-table th.sticky-col { z-index: 2; }
+.edit-table .sticky-col { position: sticky; left: 0; background: #fafafa; z-index: 1; min-width: 32px; width: 32px; padding: 5px 4px; }
+.edit-table th.sticky-col { z-index: 3; }
+.edit-table th:nth-child(2), .edit-table td:nth-child(2) { position: sticky; left: 32px; background: #fafafa; z-index: 1; min-width: 34px; width: 34px; }
+.edit-table th:nth-child(3), .edit-table td:nth-child(3) { position: sticky; left: 66px; background: #fff; z-index: 1; min-width: 56px; width: 56px; box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
+.edit-table th:nth-child(2), .edit-table th:nth-child(3) { z-index: 3; background: #f0f0f0; }
 .day-table td.row-label { font-weight: 600; color: #555; background: #fafafa; white-space: nowrap; padding: 5px 8px; }
 .day-table th.sun { color: #c62828; }
 .day-table th.sat { color: #1565c0; }
@@ -100,7 +103,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0627-F (전체선택 토글)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0627-G (이름고정·엑셀다운)</div>
   <div class="tab-bar">
     <div class="tab active" onclick="showTab('worker')">공수조회</div>
     <div class="tab" onclick="showTab('upload')">업로드</div>
@@ -734,14 +737,14 @@ async function loadEditTable() {
       console.warn('칼럼 누락, 안전 모드로 재조회:', colErr.message);
       records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,worker_id,daily_work,total_days,total_work,red_days`);
     }
-    const workers = await db('GET', 'workers', null, 'select=id,name,job_type');
+    const workers = await db('GET', 'workers', null, 'select=id,name,job_type,phone');
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
-    const list = records.map(r => ({ ...r, worker: wMap[r.worker_id] || {name:'?',job_type:''} }))
+    const list = records.map(r => ({ ...r, worker: wMap[r.worker_id] || {name:'?',job_type:'',phone:''} }))
       .sort((a,b) => ((a.seq_no==null?9999:a.seq_no)) - ((b.seq_no==null?9999:b.seq_no)));  // 번호순(엑셀 올린 순서)
     if (list.length === 0) { result.innerHTML = '<div style="color:#999;font-size:13px;">데이터 없음</div>'; return; }
 
     editData = { site, month, list: list.map(r => ({
-      id: r.id, seq: r.seq_no || 0, name: r.worker.name, job: r.worker.job_type,
+      id: r.id, seq: r.seq_no || 0, name: r.worker.name, job: r.worker.job_type, phone: r.worker.phone || '',
       daily_wage: parseInt(r.daily_wage) || 0,
       daily_work: {...(r.daily_work||{})}, red_days: {...(r.red_days||{})}
     })) };
@@ -816,10 +819,40 @@ function renderEditTable() {
   // 선택 합계 박스
   html += `<div id="ed-sel-sum" style="display:none;background:#e3f2fd;border-radius:8px;padding:12px;margin-top:10px;font-size:14px;color:#0c447c;"></div>`;
   html += `<button class="btn primary" style="margin-top:12px;" onclick="saveEditTable()" id="ed-save-btn">💾 전체 저장</button>
+    <button class="btn" style="margin-top:8px;" onclick="exportEditExcel()">📥 엑셀로 내려받기 (업로드 서식)</button>
     <div id="ed-msg" class="msg"></div>`;
   html += `<div id="ed-jobday" style="margin-top:1.2rem;"></div>`;
   document.getElementById('ed-result').innerHTML = html;
   updateSelSum(); // 합계행 + 직종표 초기화
+}
+
+function exportEditExcel() {
+  if (!editData || !editData.list || !editData.list.length) { alert('먼저 현장·월을 선택해 명단을 불러오세요'); return; }
+  if (typeof XLSX === 'undefined') { alert('엑셀 모듈 로딩 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  const { site, month, list } = editData;
+  const W = 23;
+  const blank = () => new Array(W).fill('');
+  const aoa = [];
+  // 헤더 3줄 (업로드 파서가 1~3행은 건너뜀)
+  const r1 = blank(); r1[0]='번호'; r1[1]='직종'; r1[2]='성명'; r1[3]='핸드폰번호'; r1[4]='일당'; r1[5]='출 역 현 황'; r1[21]='공수'; r1[22]='일수';
+  const r2 = blank(); for (let d = 1; d <= 15; d++) r2[4 + d] = d;
+  const r3 = blank(); for (let d = 16; d <= 31; d++) r3[5 + (d - 16)] = d;
+  aoa.push(r1, r2, r3);
+  // 데이터: 한 사람당 윗줄/아랫줄 2행
+  list.forEach(p => {
+    const t = calcTotals(p.daily_work);
+    const top = blank(), bot = blank();
+    top[0] = p.seq || ''; top[1] = p.job || ''; top[2] = p.name || ''; top[4] = p.daily_wage || '';
+    for (let d = 1; d <= 15; d++) { const v = p.daily_work[String(d)]; if (v) top[4 + d] = v; }
+    top[21] = t.work; top[22] = t.days;
+    bot[3] = p.phone || '';
+    for (let d = 16; d <= 31; d++) { const v = p.daily_work[String(d)]; if (v) bot[5 + (d - 16)] = v; }
+    aoa.push(top, bot);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '노무비명세서');
+  XLSX.writeFile(wb, `노무비_${site}_${month}.xlsx`);
 }
 
 function edToggleAll() {
