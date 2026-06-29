@@ -105,13 +105,14 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-D (합계 이름)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-F (퇴직공제 집계)</div>
   <div class="tab-bar">
     <div class="tab active" onclick="showTab('worker')">공수조회</div>
     <div class="tab" onclick="showTab('upload')">업로드</div>
     <div class="tab" onclick="showTab('manage')">관리</div>
     <div class="tab" onclick="showTab('list')">인원목록</div>
     <div class="tab" onclick="showTab('payslip')">명세서</div>
+    <div class="tab" onclick="showTab('toejik')">퇴직공제</div>
     <div class="tab" onclick="showTab('settings')">설정</div>
   </div>
 
@@ -313,6 +314,30 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
     </div>
   </div>
 
+  <div id="screen-toejik" class="screen">
+    <div id="toejik-lock" class="admin-lock">
+      <div class="lock-icon">🔒</div>
+      <p>관리자 전용 메뉴입니다</p>
+      <input type="password" id="atj-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <button class="btn primary" onclick="adminUnlock('toejik')">확인</button>
+      <div id="atj-msg" class="msg"></div>
+    </div>
+    <div id="toejik-content" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+          <span class="card-title" style="margin:0;">퇴직공제 인원 집계</span>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">실제 직종 인원 + 크레인·공사관리·현장관리 등 <strong>수동 인원</strong>을 더해 일별 합계를 맞춰보는 화면이에요. 수동 입력은 <strong>이 기기에만 저장</strong>되고 작업자·공수 등 다른 데이터엔 영향 없어요.</div>
+        <label>현장 선택</label>
+        <select id="tj-site" onchange="loadToejikMonths()"><option value="">-- 현장 선택 --</option></select>
+        <label>월 선택</label>
+        <select id="tj-month" onchange="loadToejik()"><option value="">-- 월 선택 --</option></select>
+        <div id="tj-result" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 설정 -->
   <div id="screen-settings" class="screen">
     <div id="settings-lock" class="admin-lock">
@@ -417,8 +442,8 @@ function showMsg(id, text, type) {
 }
 
 function adminUnlock(tab) {
-  const passMap = { upload:'al-pass', manage:'am-pass', list:'alist-pass', stats:'astats-pass', payslip:'apay-pass', settings:'aset-pass' };
-  const msgMap  = { upload:'al-msg',  manage:'am-msg',  list:'alist-msg',  stats:'astats-msg', payslip:'apay-msg', settings:'aset-msg' };
+  const passMap = { upload:'al-pass', manage:'am-pass', list:'alist-pass', stats:'astats-pass', payslip:'apay-pass', toejik:'atj-pass', settings:'aset-pass' };
+  const msgMap  = { upload:'al-msg',  manage:'am-msg',  list:'alist-msg',  stats:'astats-msg', payslip:'apay-msg', toejik:'atj-msg', settings:'aset-msg' };
   const input = document.getElementById(passMap[tab]);
   if (input.value !== getAdminPass()) {
     showMsg(msgMap[tab], '비밀번호가 틀렸어요', 'error');
@@ -426,7 +451,7 @@ function adminUnlock(tab) {
   }
   // 한 번 풀면 모든 탭 해제
   window._adminUnlocked = true;
-  ['upload','manage','list','stats','payslip','settings'].forEach(t => {
+  ['upload','manage','list','stats','payslip','toejik','settings'].forEach(t => {
     const lk = document.getElementById(`${t}-lock`);
     const ct = document.getElementById(`${t}-content`);
     if (lk) lk.style.display = 'none';
@@ -437,13 +462,14 @@ function adminUnlock(tab) {
   if (tab === 'list') loadList();
   if (tab === 'stats') loadStatSites();
   if (tab === 'payslip') loadPaySlipSites();
+  if (tab === 'toejik') loadToejikSites();
   if (tab === 'settings') loadManageSites();
   loadUploadSites();
   revealWorkerAdminBox();
 }
 
 function adminLock() {
-  ['upload','manage','list','stats','payslip','settings'].forEach(tab => {
+  ['upload','manage','list','stats','payslip','toejik','settings'].forEach(tab => {
     const lock = document.getElementById(`${tab}-lock`);
     const content = document.getElementById(`${tab}-content`);
     if (lock) lock.style.display = 'block';
@@ -614,8 +640,134 @@ async function renameSite() {
 }
 
 async function renameSite_END() {}
+// ===== 퇴직공제 인원 집계 (수동 입력은 localStorage, DB 영향 없음) =====
+let _tjReal = null, _tjManual = [], _tjKey = '';
+
+function loadToejikSites() {
+  const sel = document.getElementById('tj-site');
+  if (!sel) return;
+  db('GET', 'work_records', null, 'select=site_name').then(data => {
+    const sites = [...new Set(data.map(d => d.site_name))].sort();
+    sel.innerHTML = '<option value="">-- 현장 선택 --</option>';
+    sites.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
+  }).catch(() => {});
+}
+
+async function loadToejikMonths() {
+  const site = document.getElementById('tj-site').value;
+  const msel = document.getElementById('tj-month');
+  msel.innerHTML = '<option value="">-- 월 선택 --</option>';
+  document.getElementById('tj-result').innerHTML = '';
+  if (!site) return;
+  try {
+    const data = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&select=year_month`);
+    const months = [...new Set(data.map(d => d.year_month))].sort().reverse();
+    months.forEach(m => msel.innerHTML += `<option value="${m}">${m}</option>`);
+  } catch(e) {}
+}
+
+async function loadToejik() {
+  const site = document.getElementById('tj-site').value;
+  const month = document.getElementById('tj-month').value;
+  const box = document.getElementById('tj-result');
+  if (!site || !month) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div style="color:#999;">불러오는 중…</div>';
+  try {
+    const [recs, workers] = await Promise.all([
+      db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work`),
+      db('GET', 'workers', null, 'select=id,job_type')
+    ]);
+    const wMap = {}; workers.forEach(w => wMap[w.id] = w.job_type || '미분류');
+    const [yr, mo] = month.split('-').map(Number);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    const jobDay = {}, jobs = [];
+    recs.forEach(r => {
+      const job = wMap[r.worker_id] || '미분류';
+      if (!jobDay[job]) { jobDay[job] = {}; jobs.push(job); }
+      const dw = r.daily_work || {};
+      for (let d = 1; d <= daysInMonth; d++) { if ((parseFloat(dw[String(d)]) || 0) > 0) jobDay[job][d] = (jobDay[job][d] || 0) + 1; }
+    });
+    jobs.sort();
+    const realDayTot = {};
+    jobs.forEach(job => { for (let d = 1; d <= daysInMonth; d++) { const c = jobDay[job][d] || 0; if (c > 0) realDayTot[d] = (realDayTot[d] || 0) + c; } });
+    _tjReal = { site, month, daysInMonth, jobDay, jobs, realDayTot };
+    _tjKey = `toejik_${site}_${month}`;
+    let saved = null; try { saved = JSON.parse(localStorage.getItem(_tjKey)); } catch(e) {}
+    _tjManual = (saved && Array.isArray(saved) && saved.length) ? saved : [{name:'크레인',days:{}},{name:'공사관리',days:{}},{name:'현장관리',days:{}}];
+    renderToejik();
+  } catch(e) { box.innerHTML = '<div style="color:#c62828;">오류: ' + e.message + '</div>'; }
+}
+
+function saveToejikManual() { try { localStorage.setItem(_tjKey, JSON.stringify(_tjManual)); } catch(e) {} }
+function tjManualName(i, val) { if (_tjManual[i]) { _tjManual[i].name = val; saveToejikManual(); } }
+function tjManualDay(i, d, val) {
+  if (!_tjManual[i]) return;
+  const n = parseInt(val);
+  if (val === '' || isNaN(n) || n <= 0) delete _tjManual[i].days[String(d)]; else _tjManual[i].days[String(d)] = n;
+  saveToejikManual(); recomputeToejik();
+}
+function tjAddRow() { _tjManual.push({ name:'', days:{} }); saveToejikManual(); renderToejik(); }
+function tjDelRow(i) { _tjManual.splice(i, 1); saveToejikManual(); renderToejik(); }
+
+function recomputeToejik() {
+  if (!_tjReal) return;
+  const { daysInMonth, realDayTot } = _tjReal;
+  let grand = 0, msubGrand = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    let msub = 0; _tjManual.forEach(r => { msub += (parseInt(r.days[String(d)]) || 0); });
+    const tot = (realDayTot[d] || 0) + msub;
+    grand += tot; msubGrand += msub;
+    const mc = document.getElementById(`tj-msub-${d}`); if (mc) mc.textContent = msub || '';
+    const tc = document.getElementById(`tj-tot-${d}`); if (tc) tc.textContent = tot || '';
+  }
+  const mg = document.getElementById('tj-msub-g'); if (mg) mg.textContent = msubGrand;
+  const tg = document.getElementById('tj-tot-g'); if (tg) tg.textContent = grand;
+}
+
+function renderToejik() {
+  const box = document.getElementById('tj-result');
+  if (!_tjReal) { box.innerHTML = ''; return; }
+  const { daysInMonth, jobDay, jobs, realDayTot, month } = _tjReal;
+  const [yr, mo] = month.split('-').map(Number);
+  let html = '<div style="overflow-x:auto;"><table class="day-stat-table"><tr><th>구분</th>';
+  for (let d = 1; d <= daysInMonth; d++) { const dow = new Date(yr, mo-1, d).getDay(); html += `<th style="${dow===0?'color:#c62828':dow===6?'color:#1565c0':''}">${d}</th>`; }
+  html += '<th>합계</th></tr>';
+  // 실제 직종
+  let realGrand = 0;
+  jobs.forEach(job => {
+    html += `<tr><td class="job-col">${job}</td>`;
+    let rt = 0;
+    for (let d = 1; d <= daysInMonth; d++) { const c = jobDay[job][d] || 0; if (c > 0) { rt += c; html += `<td class="has-worker">${c}</td>`; } else html += '<td></td>'; }
+    realGrand += rt;
+    html += `<td style="font-weight:700;color:#185FA5;">${rt}</td></tr>`;
+  });
+  // 실제 소계
+  html += '<tr style="background:#eef3f9;font-weight:700;"><td class="job-col" style="background:#eef3f9;">실제 소계</td>';
+  for (let d = 1; d <= daysInMonth; d++) { const c = realDayTot[d] || 0; html += c > 0 ? `<td style="color:#185FA5;">${c}</td>` : '<td></td>'; }
+  html += `<td style="color:#185FA5;">${realGrand}</td></tr>`;
+  // 수동 줄
+  _tjManual.forEach((r, i) => {
+    const nm = (r.name || '').replace(/"/g, '&quot;');
+    html += `<tr><td style="white-space:nowrap;background:#fffaf0;"><input type="text" value="${nm}" oninput="tjManualName(${i},this.value)" placeholder="직종명" style="width:64px;border:none;background:transparent;font-weight:600;font-size:12px;color:#e65100;"> <span onclick="tjDelRow(${i})" style="cursor:pointer;color:#c62828;font-size:11px;">✕</span></td>`;
+    for (let d = 1; d <= daysInMonth; d++) { const v = r.days[String(d)] || ''; html += `<td style="padding:0;background:#fffaf0;"><input type="text" inputmode="numeric" value="${v}" oninput="tjManualDay(${i},${d},this.value)" style="width:26px;border:none;background:transparent;text-align:center;font-size:12px;"></td>`; }
+    html += '<td style="background:#fffaf0;"></td></tr>';
+  });
+  // 수동 소계
+  html += '<tr style="background:#fff3e0;font-weight:700;"><td class="job-col" style="background:#fff3e0;color:#e65100;">수동 소계</td>';
+  for (let d = 1; d <= daysInMonth; d++) html += `<td id="tj-msub-${d}" style="color:#e65100;"></td>`;
+  html += '<td id="tj-msub-g" style="color:#e65100;"></td></tr>';
+  // 총 합계
+  html += '<tr style="background:#e3f2fd;font-weight:700;"><td class="job-col" style="background:#e3f2fd;color:#0c447c;">총 합계</td>';
+  for (let d = 1; d <= daysInMonth; d++) html += `<td id="tj-tot-${d}" style="color:#0c447c;"></td>`;
+  html += '<td id="tj-tot-g" style="color:#0c447c;"></td></tr>';
+  html += '</table></div>';
+  html += '<button class="lock-btn" style="margin-top:8px;" onclick="tjAddRow()">+ 직종 줄 추가</button>';
+  box.innerHTML = html;
+  recomputeToejik();
+}
+
 function showTab(tab) {
-  ['worker','upload','manage','list','payslip','settings'].forEach((t,i) => {
+  ['worker','upload','manage','list','payslip','toejik','settings'].forEach((t,i) => {
     document.querySelectorAll('.tab')[i].classList.toggle('active', t === tab);
     document.getElementById('screen-' + t).classList.toggle('active', t === tab);
   });
@@ -629,6 +781,7 @@ function showTab(tab) {
     if (tab === 'manage') loadManageSites();
     if (tab === 'list') loadList();
     if (tab === 'payslip') loadPaySlipSites();
+    if (tab === 'toejik') loadToejikSites();
     if (tab === 'upload') loadUploadSites();
     if (tab === 'settings') loadManageSites();
   }
@@ -960,12 +1113,21 @@ function edToggleAll() {
   updateSelSum();
 }
 
+let _jobChecks = new Set();
+let _lastJobList = null;
+
+function onJobCheck(job, checked) {
+  if (checked) _jobChecks.add(job); else _jobChecks.delete(job);
+  renderJobDaySummary(_lastJobList);
+}
+
 function renderJobDaySummary(listArg) {
   if (!editData) return;
   const box = document.getElementById('ed-jobday');
   if (!box) return;
   const { month } = editData;
   const list = listArg || editData.list;
+  _lastJobList = list;
   const [yr, mo] = month.split('-').map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
   // jobDay[job][day] = 인원수
@@ -978,28 +1140,43 @@ function renderJobDaySummary(listArg) {
     }
   });
   jobs.sort();
-  let html = `<div class="card-title" style="font-size:14px;margin-bottom:6px;">직종별 일별 인원수 <span style="font-weight:400;color:#999;font-size:12px;">(명)</span></div>`;
-  html += '<div style="overflow-x:auto;"><table class="day-stat-table"><tr><th>직종</th>';
+  // 체크된 직종만 합계 반영 (없으면 전체)
+  [..._jobChecks].forEach(j => { if (!jobs.includes(j)) _jobChecks.delete(j); });
+  const hasSel = _jobChecks.size > 0;
+  const activeJobs = hasSel ? jobs.filter(j => _jobChecks.has(j)) : jobs;
+
+  let html = `<div class="card-title" style="font-size:14px;margin-bottom:6px;">직종별 일별 인원수 <span style="font-weight:400;color:#999;font-size:12px;">(명) · 직종 체크 시 그 직종만 합계</span></div>`;
+  html += '<div style="overflow-x:auto;"><table class="day-stat-table"><tr><th style="width:26px;">✓</th><th>직종</th>';
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(yr, mo-1, d).getDay();
     html += `<th style="${dow===0?'color:#c62828':dow===6?'color:#1565c0':''}">${d}</th>`;
   }
   html += '<th>합계</th></tr>';
-  const dayGrand = {};
+
+  // 합계 행 (맨 위: 직종 헤더와 첫 직종 사이)
+  const dayGrand = {}; let grand = 0;
+  activeJobs.forEach(job => {
+    for (let d = 1; d <= daysInMonth; d++) { const c = jobDay[job][d] || 0; if (c > 0) dayGrand[d] = (dayGrand[d] || 0) + c; }
+  });
+  html += '<tr style="background:#e3f2fd;font-weight:700;"><td></td><td class="job-col" style="color:#0c447c;background:#e3f2fd;">합계' + (hasSel ? ` <span style="font-size:10px;color:#1565c0;">(선택 ${_jobChecks.size})</span>` : '') + '</td>';
+  for (let d = 1; d <= daysInMonth; d++) { const c = dayGrand[d] || 0; grand += c; html += c > 0 ? `<td style="color:#0c447c;">${c}</td>` : '<td></td>'; }
+  html += `<td style="color:#0c447c;">${grand}</td></tr>`;
+
+  // 직종별 행 (체크박스)
   jobs.forEach(job => {
-    html += `<tr><td class="job-col">${job}</td>`;
+    const checked = _jobChecks.has(job);
+    const faded = hasSel && !checked ? 'opacity:0.4;' : '';
+    const jobEsc = job.replace(/'/g, "\\'");
+    html += `<tr style="${faded}"><td style="text-align:center;"><input type="checkbox" ${checked?'checked':''} onclick="onJobCheck('${jobEsc}',this.checked)"></td><td class="job-col">${job}</td>`;
     let rowTot = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const c = jobDay[job][d] || 0;
-      if (c > 0) { rowTot += c; dayGrand[d] = (dayGrand[d] || 0) + c; html += `<td class="has-worker">${c}</td>`; }
+      if (c > 0) { rowTot += c; html += `<td class="has-worker">${c}</td>`; }
       else html += '<td></td>';
     }
     html += `<td style="font-weight:700;color:#185FA5;">${rowTot}</td></tr>`;
   });
-  html += '<tr style="background:#f0f0f0;font-weight:700;"><td class="job-col">합계</td>';
-  let grand = 0;
-  for (let d = 1; d <= daysInMonth; d++) { const c = dayGrand[d] || 0; grand += c; html += c>0?`<td style="color:#185FA5;">${c}</td>`:'<td></td>'; }
-  html += `<td style="color:#185FA5;">${grand}</td></tr></table></div>`;
+  html += '</table></div>';
   box.innerHTML = html;
 }
 
