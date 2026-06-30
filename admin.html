@@ -26,6 +26,7 @@ h1 { font-size: 20px; font-weight: 600; text-align: center; padding: 1.2rem 0 1r
 label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; margin-top: 12px; }
 label:first-of-type { margin-top: 0; }
 input, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fafafa; color: #222; outline: none; }
+input[type="checkbox"], input[type="radio"] { width: auto; padding: 0; }
 input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .btn { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 1rem; background: #fff; color: #222; font-weight: 600; }
 .btn.primary { background: #185FA5; border-color: #185FA5; color: #fff; }
@@ -113,7 +114,7 @@ body.hide-money .money-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-O (관리 권한·현장제한)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-P (체크박스 정렬)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
