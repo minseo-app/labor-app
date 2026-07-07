@@ -106,7 +106,8 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .doc-table th { background: #f0f0f0; padding: 7px 4px; border: 1px solid #ddd; text-align: center; white-space: nowrap; }
 .doc-table td { padding: 7px 4px; border: 1px solid #eee; text-align: center; }
-body.hide-money .money-cell { display: none !important; }
+body.hide-wage .wage-cell { display: none !important; }
+body.hide-pay .pay-cell { display: none !important; }
 .lock-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; color: #888; }
 </style>
 </head>
@@ -114,7 +115,7 @@ body.hide-money .money-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-S (월별 직종)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-T (일당·노무비 분리)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -441,7 +442,8 @@ body.hide-money .money-cell { display: none !important; }
           <div id="pm-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-top:6px;"></div>
           <label style="margin-top:16px;display:block;">세부 옵션</label>
           <div style="margin-top:6px;">
-            <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-money" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>일당·노무비 금액</strong> 보이기</span></label>
+            <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-wage" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>일당</strong> 보이기</span></label>
+            <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-pay" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>노무비 총금액</strong> 보이기</span></label>
             <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-edit" style="transform:scale(1.3);flex:none;"><span style="flex:1;"><strong>수정·업로드·삭제</strong> 허용 <span style="color:#999;">(끄면 읽기 전용)</span></span></label>
           </div>
           <label style="margin-top:16px;display:block;">보이는 현장 <span style="color:#999;font-weight:400;font-size:12px;">(아무것도 체크 안 하면 전체 허용)</span></label>
@@ -496,7 +498,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const ADMIN_KEY = 'admin_password';
 
 // ===== 권한 (마스터 / 보기) =====
-const DEFAULT_PERM = { tabs: { worker:true, list:true, payslip:false, toejik:false, docs:false, manage:false, upload:false }, showMoney:false, allowEdit:false, sites:[] };
+const DEFAULT_PERM = { tabs: { worker:true, list:true, payslip:false, toejik:false, docs:false, manage:false, upload:false }, showWage:false, showPay:false, allowEdit:false, sites:[] };
 let _perm = JSON.parse(JSON.stringify(DEFAULT_PERM));
 let _masterPass = null;
 let _viewerPass = '';
@@ -524,7 +526,7 @@ async function loadAuthConfig() {
       if (r.key === 'admin_master_pass') _masterPass = r.value || _masterPass;
       if (r.key === 'admin_viewer_pass') _viewerPass = r.value || '';
       if (r.key === 'admin_perm' && r.value) {
-        try { const p = JSON.parse(r.value); _perm = { tabs: Object.assign({}, DEFAULT_PERM.tabs, p.tabs || {}), showMoney: !!p.showMoney, allowEdit: !!p.allowEdit, sites: Array.isArray(p.sites) ? p.sites : [] }; } catch(e) {}
+        try { const p = JSON.parse(r.value); const money = !!p.showMoney; _perm = { tabs: Object.assign({}, DEFAULT_PERM.tabs, p.tabs || {}), showWage: p.showWage !== undefined ? !!p.showWage : money, showPay: p.showPay !== undefined ? !!p.showPay : money, allowEdit: !!p.allowEdit, sites: Array.isArray(p.sites) ? p.sites : [] }; } catch(e) {}
       }
     });
   } catch(e) {}
@@ -601,7 +603,8 @@ function applyRoleVisibility() {
     if (lk) lk.style.display = show ? 'none' : 'block';
     if (ct) ct.style.display = show ? 'block' : 'none';
   });
-  document.body.classList.toggle('hide-money', window._adminRole === 'viewer' && !_perm.showMoney);
+  document.body.classList.toggle('hide-wage', window._adminRole === 'viewer' && !_perm.showWage);
+  document.body.classList.toggle('hide-pay', window._adminRole === 'viewer' && !_perm.showPay);
   document.body.classList.toggle('view-readonly', window._adminRole === 'viewer' && !_perm.allowEdit);
 }
 
@@ -615,7 +618,7 @@ function adminLock() {
     if (content) content.style.display = 'none';
   });
   document.querySelectorAll('.tab').forEach(b => b.style.display = '');
-  document.body.classList.remove('hide-money', 'view-readonly');
+  document.body.classList.remove('hide-wage', 'hide-pay', 'view-readonly');
   revealWorkerAdminBox();
   showTab('worker');
 }
@@ -760,7 +763,8 @@ function loadPermUI() {
         box.innerHTML += `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="pm-tab" data-tab="${t}" ${checked} style="transform:scale(1.3);flex:none;"><span>${PERM_TAB_LABELS[t]}</span></label>`;
       });
     }
-    const m = document.getElementById('pm-money'); if (m) m.checked = !!_perm.showMoney;
+    const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!_perm.showWage;
+    const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!_perm.showPay;
     const e = document.getElementById('pm-edit'); if (e) e.checked = !!_perm.allowEdit;
     const sbox = document.getElementById('pm-sites');
     if (sbox) {
@@ -785,7 +789,7 @@ async function savePerm() {
   const tabs = {};
   document.querySelectorAll('.pm-tab').forEach(c => { tabs[c.dataset.tab] = c.checked; });
   tabs.worker = true; // 공수조회는 기본 허용
-  const perm = { tabs, showMoney: document.getElementById('pm-money').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
+  const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
   try {
     await saveSetting('admin_viewer_pass', viewpass);
     await saveSetting('admin_perm', JSON.stringify(perm));
@@ -2008,9 +2012,9 @@ async function loadWorkerHistory(workerId, idx) {
           <div class="history-stats">
             <span>일수 <strong style="color:#185FA5;">${r.total_days}</strong></span>
             <span>공수 <strong style="color:#185FA5;">${parseFloat(r.total_work).toFixed(1)}</strong></span>
-            <span class="money-cell">일당 <strong style="color:${wage?'#e65100':'#bbb'};">${wage ? wage.toLocaleString() : '미입력'}</strong></span>
+            <span class="wage-cell">일당 <strong style="color:${wage?'#e65100':'#bbb'};">${wage ? wage.toLocaleString() : '미입력'}</strong></span>
           </div>
-          ${wage ? `<div class="money-cell" style="font-size:13px;margin-top:6px;padding-top:6px;border-top:1px dashed #ddd;">노무비 <strong style="color:#c62828;font-size:15px;">${amount.toLocaleString()}원</strong></div>` : ''}
+          ${wage ? `<div class="pay-cell" style="font-size:13px;margin-top:6px;padding-top:6px;border-top:1px dashed #ddd;">노무비 <strong style="color:#c62828;font-size:15px;">${amount.toLocaleString()}원</strong></div>` : ''}
         </div>`;
       }).join('')}`;
   } catch(e) { dataDiv.innerHTML = `<div style="color:#c62828;font-size:13px;">${e.message}</div>`; }
@@ -2033,7 +2037,7 @@ async function loadWorkerDetail(workerId, idx) {
       <div style="display:flex;gap:12px;margin:8px 0;flex-wrap:wrap;">
         <div style="font-size:13px;"><span style="color:#888;">일수</span> <strong style="color:#185FA5;">${rec.total_days}</strong></div>
         <div style="font-size:13px;"><span style="color:#888;">공수</span> <strong style="color:#185FA5;">${parseFloat(rec.total_work).toFixed(1)}</strong></div>
-        ${rec.daily_wage ? `<div class="money-cell" style="font-size:13px;"><span style="color:#888;">일당</span> <strong style="color:#e65100;">${parseInt(rec.daily_wage).toLocaleString()}</strong></div><div class="money-cell" style="font-size:13px;"><span style="color:#888;">노무비</span> <strong style="color:#c62828;">${(parseInt(rec.daily_wage)*parseFloat(rec.total_work||0)).toLocaleString()}원</strong></div>` : `<div class="money-cell" style="font-size:13px;"><span style="color:#888;">일당</span> <strong style="color:#bbb;">미입력</strong></div>`}
+        ${rec.daily_wage ? `<div class="wage-cell" style="font-size:13px;"><span style="color:#888;">일당</span> <strong style="color:#e65100;">${parseInt(rec.daily_wage).toLocaleString()}</strong></div><div class="pay-cell" style="font-size:13px;"><span style="color:#888;">노무비</span> <strong style="color:#c62828;">${(parseInt(rec.daily_wage)*parseFloat(rec.total_work||0)).toLocaleString()}원</strong></div>` : `<div class="wage-cell" style="font-size:13px;"><span style="color:#888;">일당</span> <strong style="color:#bbb;">미입력</strong></div>`}
       </div>
       <div style="font-size:12px;color:#e65100;background:#fff3e0;padding:8px 10px;border-radius:8px;margin-bottom:8px;">
         💡 공수 칸을 <strong>클릭</strong>하면 빨간색(특이사항)으로 표시돼요. 다시 누르면 해제!
