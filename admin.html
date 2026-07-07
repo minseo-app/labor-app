@@ -114,7 +114,7 @@ body.hide-money .money-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-R (명세서 번호순·미리보기)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-S (월별 직종)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -873,7 +873,7 @@ async function loadToejik() {
   box.innerHTML = '<div style="color:#999;">불러오는 중…</div>';
   try {
     const [recs, workers] = await Promise.all([
-      db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work`),
+      db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,job_type`),
       db('GET', 'workers', null, 'select=id,job_type')
     ]);
     const wMap = {}; workers.forEach(w => wMap[w.id] = w.job_type || '미분류');
@@ -881,7 +881,7 @@ async function loadToejik() {
     const daysInMonth = new Date(yr, mo, 0).getDate();
     const jobDay = {}, jobDayWork = {}, jobs = [];
     recs.forEach(r => {
-      const job = wMap[r.worker_id] || '미분류';
+      const job = r.job_type || wMap[r.worker_id] || '미분류';
       if (!jobDay[job]) { jobDay[job] = {}; jobDayWork[job] = {}; jobs.push(job); }
       const dw = r.daily_work || {};
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1028,13 +1028,13 @@ async function loadDocs() {
   box.innerHTML = '<div style="color:#999;">불러오는 중…</div>';
   try {
     const [recs, workers] = await Promise.all([
-      db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,worker_id,contract,seq_no`),
+      db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,worker_id,contract,seq_no,job_type`),
       db('GET', 'workers', null, 'select=id,name,job_type,id_card,bankbook')
     ]);
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
     const rows = recs.map(r => {
       const w = wMap[r.worker_id] || { name:'?', job_type:'', id_card:false, bankbook:false };
-      return { recId: r.id, workerId: r.worker_id, seq: r.seq_no || 0, name: w.name, job: w.job_type || '', contract: !!r.contract, id_card: !!w.id_card, bankbook: !!w.bankbook };
+      return { recId: r.id, workerId: r.worker_id, seq: r.seq_no || 0, name: w.name, job: r.job_type || w.job_type || '', contract: !!r.contract, id_card: !!w.id_card, bankbook: !!w.bankbook };
     }).sort((a,b) => (a.seq||9999) - (b.seq||9999));
     _docsData = { site, month, rows };
     renderDocs();
@@ -1257,7 +1257,7 @@ async function loadEditTable() {
   try {
     let records;
     try {
-      records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,worker_id,daily_work,total_days,total_work,red_days,seq_no,daily_wage`);
+      records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=id,worker_id,daily_work,total_days,total_work,red_days,seq_no,daily_wage,job_type`);
     } catch(colErr) {
       // seq_no / daily_wage 칸이 아직 없으면 기본 칸만으로 재시도 (DB에 칸 추가하면 정상 동작)
       console.warn('칼럼 누락, 안전 모드로 재조회:', colErr.message);
@@ -1270,7 +1270,7 @@ async function loadEditTable() {
     if (list.length === 0) { result.innerHTML = '<div style="color:#999;font-size:13px;">데이터 없음</div>'; return; }
 
     editData = { site, month, list: list.map(r => ({
-      id: r.id, seq: r.seq_no || 0, name: r.worker.name, job: r.worker.job_type, phone: r.worker.phone || '',
+      id: r.id, seq: r.seq_no || 0, name: r.worker.name, job: r.job_type || r.worker.job_type || '', phone: r.worker.phone || '',
       daily_wage: parseInt(r.daily_wage) || 0,
       daily_work: {...(r.daily_work||{})}, red_days: {...(r.red_days||{})}
     })) };
@@ -1667,7 +1667,7 @@ async function adminWorkerTest() {
     if (worker.locked) return showMsg('tw-msg', '이 작업자는 비밀번호 잠금 상태예요 (인원목록에서 초기화 필요)', 'error');
     if (worker.password && pw && pw !== String(worker.password)) return showMsg('tw-msg', '비밀번호가 일치하지 않아요', 'error');
     if (_histMode === 'period' && (!_histSite || !_histMonth)) return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (현장·월 미선택)', 'error');
-    let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days&order=year_month.desc`);
+    let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
     if (!records || records.length === 0) return showMsg('tw-msg', '근무 기록이 없어요', 'error');
     if (_histMode === 'period') {
       records = records.filter(r => r.site_name === _histSite && r.year_month === _histMonth);
@@ -1705,7 +1705,7 @@ async function workerLogin() {
     const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type`);
     if (!workers || workers.length === 0) return showMsg('w-msg','이름 또는 핸드폰번호가 틀렸어요','error');
     const worker = workers[0];
-    let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days&order=year_month.desc`);
+    let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
     if (!records || records.length === 0) return showMsg('w-msg','근무 기록이 없어요','error');
     document.getElementById('w-msg').className = 'msg';
     // 관리자 설정: 전체 / 특정 현장·월
@@ -1721,13 +1721,13 @@ function renderWorkerResult(worker, records) {
   const wrap = document.getElementById('w-result');
   let html = `<div class="card">
     <div class="card-title">${worker.name}님의 공수</div>
-    ${worker.job_type ? `<div><span class="badge-job">${worker.job_type}</span></div>` : ''}
+    ${records.length && records[0].job_type ? `<div><span class="badge-job">${records[0].job_type}</span></div>` : (worker.job_type ? `<div><span class="badge-job">${worker.job_type}</span></div>` : '')}
     <div style="font-size:12px;color:#999;margin-top:4px;">총 ${records.length}개월 기록</div>
   </div>`;
   records.forEach((rec, i) => {
     html += `<div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-        <span style="color:#185FA5;">${rec.year_month}</span>
+        <span style="color:#185FA5;">${rec.year_month}${rec.job_type ? ` <span style="font-size:12px;color:#e65100;font-weight:600;">· ${rec.job_type}</span>` : ''}</span>
         <span style="color:#999;font-weight:400;font-size:12px;">${rec.site_name}</span>
       </div>
       <div class="stat-grid">
@@ -1900,7 +1900,7 @@ async function uploadToSupabase() {
         worker_id = created[0].id;
       }
       const recExist = await db('GET', 'work_records', null, `worker_id=eq.${worker_id}&site_name=eq.${encodeURIComponent(site_name)}&year_month=eq.${year_month}&select=id`);
-      const payload = { worker_id, site_name, year_month, company_name, seq_no: w.num, daily_wage: w.daily_wage || 0, daily_work: w.daily_work, total_days: w.total_days, total_work: w.total_work };
+      const payload = { worker_id, site_name, year_month, company_name, seq_no: w.num, daily_wage: w.daily_wage || 0, daily_work: w.daily_work, total_days: w.total_days, total_work: w.total_work, job_type: w.job_type };
       if (recExist && recExist.length > 0) {
         await db('PATCH', `work_records?id=eq.${recExist[0].id}`, payload);
       } else {
@@ -1991,7 +1991,7 @@ async function loadWorkerHistory(workerId, idx) {
   const dataDiv = document.getElementById(`ddata-${idx}`);
   dataDiv.innerHTML = '<div style="font-size:13px;color:#999;padding:8px 0;">불러오는 중...</div>';
   try {
-    let records = await db('GET', 'work_records', null, `worker_id=eq.${workerId}&select=site_name,year_month,total_days,total_work,daily_wage&order=year_month.desc`);
+    let records = await db('GET', 'work_records', null, `worker_id=eq.${workerId}&select=site_name,year_month,total_days,total_work,daily_wage,job_type&order=year_month.desc`);
     if (records && window._adminRole === 'viewer' && Array.isArray(_perm.sites) && _perm.sites.length) records = records.filter(r => _perm.sites.includes(r.site_name));
     if (!records || records.length === 0) { dataDiv.innerHTML = '<div style="font-size:13px;color:#999;padding:6px 0;">근무 기록 없음</div>'; return; }
     dataDiv.innerHTML = `
@@ -2002,7 +2002,7 @@ async function loadWorkerHistory(workerId, idx) {
         return `
         <div class="history-card">
           <div class="history-header">
-            <span class="history-month">${r.year_month}</span>
+            <span class="history-month">${r.year_month}${r.job_type ? ` <span style="font-size:11px;color:#e65100;font-weight:600;">· ${r.job_type}</span>` : ''}</span>
             <span class="history-site">${r.site_name}</span>
           </div>
           <div class="history-stats">
@@ -2210,16 +2210,16 @@ async function loadPaySlipWorkers() {
   const listDiv = document.getElementById('ps-worker-list');
   if (!site || !month) { wrap.style.display = 'none'; return; }
   try {
-    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,total_work,seq_no`);
+    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,total_work,seq_no,job_type`);
     const workers = await db('GET', 'workers', null, 'select=id,name,job_type');
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
-    const list = records.map(r => ({ id: r.worker_id, work: r.total_work, seq: r.seq_no, w: wMap[r.worker_id] || {name:'?',job_type:''} }))
+    const list = records.map(r => ({ id: r.worker_id, work: r.total_work, seq: r.seq_no, job: r.job_type || '', w: wMap[r.worker_id] || {name:'?',job_type:''} }))
       .sort((a,b) => ((a.seq ?? 9999) - (b.seq ?? 9999)) || (a.w.name||'').localeCompare(b.w.name||''));
     if (list.length === 0) { wrap.style.display = 'none'; return; }
     listDiv.innerHTML = list.map(it => `
       <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:14px;cursor:pointer;border-bottom:1px solid #f5f5f5;">
         <input type="checkbox" class="ps-check" value="${it.id}" style="width:auto;">
-        <span style="flex:1;">${it.w.name} <span style="color:#999;font-size:12px;">${it.w.job_type||''}</span></span>
+        <span style="flex:1;">${it.w.name} <span style="color:#999;font-size:12px;">${it.job || it.w.job_type||''}</span></span>
         <span style="color:#185FA5;font-size:13px;">${parseFloat(it.work).toFixed(1)}공수</span>
       </label>`).join('');
     wrap.style.display = 'block';
@@ -2271,7 +2271,7 @@ function buildPaySlipHTML(worker, rec, month, company) {
         <td colspan="3" class="ps-label">성 명</td>
         <td colspan="5" class="ps-value">${worker.name}</td>
         <td colspan="3" class="ps-label">팀명, 직위</td>
-        <td colspan="5" class="ps-value">${worker.job_type || ''}</td>
+        <td colspan="5" class="ps-value">${rec.job_type || worker.job_type || ''}</td>
       </tr>
       <tr>
         <td colspan="4" class="ps-label">공사명 (현장명)</td>
@@ -2305,7 +2305,7 @@ async function previewPaySlips() {
   box.style.display = 'block';
   box.innerHTML = '<div style="color:#999;padding:10px;">미리보기 준비 중…</div>';
   try {
-    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name,red_days,daily_wage,seq_no`);
+    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name,red_days,daily_wage,seq_no,job_type`);
     const workers = await db('GET', 'workers', null, 'select=id,name,job_type');
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
     let list = records.map(r => ({ rec: r, worker: wMap[r.worker_id] || {name:'?', job_type:''} }))
@@ -2331,7 +2331,7 @@ async function generatePaySlips() {
   btn.disabled = true;
 
   try {
-    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name,red_days,daily_wage,seq_no`);
+    const records = await db('GET', 'work_records', null, `site_name=eq.${encodeURIComponent(site)}&year_month=eq.${month}&select=worker_id,daily_work,total_work,total_days,site_name,red_days,daily_wage,seq_no,job_type`);
     const workers = await db('GET', 'workers', null, 'select=id,name,job_type');
     const wMap = {}; workers.forEach(w => wMap[w.id] = w);
 
