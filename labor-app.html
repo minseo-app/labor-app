@@ -40,7 +40,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <body>
 <div class="container">
   <h1>⚒️ 노무비 공수 조회</h1>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0627-F (잠금)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0628-H (월별 직종)</div>
 
   <div class="card">
     <div class="card-title">본인 공수 조회</div>
@@ -177,7 +177,7 @@ async function showWorkerRecords(worker) {
   if (_histMode === 'none' || (_histMode === 'period' && (!_histSite || !_histMonth))) {
     return showMsg('w-msg','아직 출력 작업 중입니다 🛠️','error');
   }
-  let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days&order=year_month.desc`);
+  let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
   if (!records || records.length === 0) return showMsg('w-msg','근무 기록이 없어요','error');
   if (_histMode === 'period') {
     records = records.filter(r => r.site_name === _histSite && r.year_month === _histMonth);
@@ -190,13 +190,13 @@ function renderWorkerResult(worker, records) {
   const wrap = document.getElementById('w-result');
   let html = `<div class="card">
     <div class="card-title">${worker.name}님의 공수</div>
-    ${worker.job_type ? `<div><span class="badge-job">${worker.job_type}</span></div>` : ''}
+    ${(records.length && records[0].job_type) ? `<div><span class="badge-job">${records[0].job_type}</span></div>` : (worker.job_type ? `<div><span class="badge-job">${worker.job_type}</span></div>` : '')}
     <div style="font-size:14px;color:#999;margin-top:4px;">총 ${records.length}개월 기록</div>
   </div>`;
   records.forEach((rec, i) => {
     html += `<div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;font-size:16px;">
-        <span style="color:#185FA5;">${rec.year_month}</span>
+        <span style="color:#185FA5;">${rec.year_month}${rec.job_type ? ` <span style="font-size:13px;color:#e65100;font-weight:700;">· ${rec.job_type}</span>` : ''}</span>
         <span style="color:#999;font-weight:600;font-size:14px;">${rec.site_name}</span>
       </div>
       <div class="stat-grid">
