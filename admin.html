@@ -109,13 +109,34 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 body.hide-wage .wage-cell { display: none !important; }
 body.hide-pay .pay-cell { display: none !important; }
 .lock-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; color: #888; }
+#login-gate { position: fixed; inset: 0; background: #f5f5f5; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-box { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 2rem 1.6rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+.login-box h2 { font-size: 20px; font-weight: 700; text-align: center; color: #1a1a1a; margin-bottom: 4px; }
+.login-box .sub { font-size: 13px; color: #999; text-align: center; margin-bottom: 1.4rem; }
+.login-box label { font-size: 13px; color: #666; margin-top: 14px; }
+.login-box input { width: 100%; padding: 13px 14px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; background: #fafafa; }
+.login-box input:focus { border-color: #185FA5; background: #fff; }
 </style>
 </head>
 <body>
+<div id="login-gate">
+  <div class="login-box">
+    <h2>⚒️ 노무비 공수 조회</h2>
+    <div class="sub">관리자 로그인</div>
+    <label>아이디</label>
+    <input type="text" id="lg-id" autocomplete="username" placeholder="아이디" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <label>비밀번호</label>
+    <input type="password" id="lg-pw" autocomplete="current-password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <button class="btn primary" id="lg-btn" style="margin-top:1.2rem;" onclick="doAdminLogin()">로그인</button>
+    <div id="lg-msg" class="msg"></div>
+    <div style="text-align:center;margin-top:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
+  </div>
+</div>
+
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0628-T (일당·노무비 분리)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0707-S3 (아이디 로그인·보안)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -415,12 +436,13 @@ body.hide-pay .pay-cell { display: none !important; }
       </div>
       <div class="card">
         <div class="card-title collapsible-head" onclick="toggleCard('pass')">
-          <span>🔑 마스터 비밀번호 변경</span>
+          <span>🔑 내 로그인 비밀번호 변경</span>
           <span class="toggle-arrow" id="arrow-pass">▼ 펼치기</span>
         </div>
         <div class="card-body" id="body-pass" style="display:none;">
+          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">지금 로그인한 아이디(<strong id="cp-who">admin</strong>)의 비밀번호를 바꿔요.</div>
           <label>현재 비밀번호</label>
-          <input type="password" id="cp-old" placeholder="현재 마스터 비밀번호">
+          <input type="password" id="cp-old" placeholder="현재 비밀번호">
           <label>새 비밀번호</label>
           <input type="password" id="cp-new" placeholder="새 비밀번호">
           <label>새 비밀번호 확인</label>
@@ -435,9 +457,9 @@ body.hide-pay .pay-cell { display: none !important; }
           <span class="toggle-arrow" id="arrow-perm">▼ 펼치기</span>
         </div>
         <div class="card-body" id="body-perm" style="display:none;">
-          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">보기 비밀번호로 들어온 사람에게 <strong>무엇을 보여줄지</strong> 정해요. 마스터 비밀번호는 항상 전체 권한이에요.</div>
-          <label>보기 비밀번호 (비우면 사용 안 함)</label>
-          <input type="text" id="pm-viewpass" placeholder="예: 5678">
+          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">보기권한 아이디로 로그인한 사람에게 <strong>무엇을 보여줄지</strong> 정해요. 마스터(<strong>admin</strong>)는 항상 전체 권한이에요. <br>※ 계정 자체는 Supabase 화면에서 만들고, 여기선 그 아이디의 <strong>권한</strong>만 정해요.</div>
+          <label>보기권한 아이디</label>
+          <input type="text" id="pm-viewid" value="iddcjh" placeholder="예: iddcjh" onchange="loadPermUI()">
           <label style="margin-top:12px;display:block;">보여줄 메뉴</label>
           <div id="pm-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-top:6px;"></div>
           <label style="margin-top:16px;display:block;">세부 옵션</label>
@@ -504,6 +526,105 @@ let _masterPass = null;
 let _viewerPass = '';
 window._adminRole = null; // 'master' | 'viewer'
 
+// ===== 로그인 (아이디+비번 → 뒤에서 Supabase Auth, 아이디는 이메일처럼 처리) =====
+const AUTH_SUFFIX = '@nc-labor.app';   // 화면엔 안 보이는 내부 꼬리표
+const MASTER_ID = 'admin';             // 이 아이디로 로그인하면 마스터(전체 권한)
+let _session = null;                   // { access_token, refresh_token, user }
+
+function authToken() { return (_session && _session.access_token) || SUPA_KEY; }
+function currentUsername() {
+  const email = (_session && _session.user && _session.user.email) || '';
+  return email.replace(AUTH_SUFFIX, '');
+}
+function saveSession(d) { try { localStorage.setItem('nc_admin_refresh', d.refresh_token || ''); } catch(_) {} }
+function clearSession() { _session = null; try { localStorage.removeItem('nc_admin_refresh'); } catch(_) {} }
+
+async function authSignIn(username, password) {
+  const email = username.toLowerCase() + AUTH_SUFFIX;
+  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.error || '로그인 실패');
+  return data;
+}
+
+async function restoreSession() {
+  let rt = null; try { rt = localStorage.getItem('nc_admin_refresh'); } catch(_) {}
+  if (!rt) return false;
+  try {
+    const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.access_token) return false;
+    _session = data; saveSession(data); return true;
+  } catch(_) { return false; }
+}
+
+async function doAdminLogin() {
+  const id = document.getElementById('lg-id').value.trim().toLowerCase();
+  const pw = document.getElementById('lg-pw').value;
+  if (!id || !pw) return showMsg('lg-msg', '아이디와 비밀번호를 입력하세요', 'error');
+  const btn = document.getElementById('lg-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>로그인 중...';
+  try {
+    _session = await authSignIn(id, pw);
+    saveSession(_session);
+    document.getElementById('lg-pw').value = '';
+    document.getElementById('lg-msg').className = 'msg';
+    await afterLogin();
+  } catch(e) {
+    showMsg('lg-msg', '아이디 또는 비밀번호가 올바르지 않아요', 'error');
+  }
+  btn.disabled = false; btn.textContent = '로그인';
+}
+
+async function afterLogin() {
+  const uname = currentUsername();
+  window._adminRole = (uname === MASTER_ID) ? 'master' : 'viewer';
+  window._adminUnlocked = true;
+  const whoEl = document.getElementById('cp-who'); if (whoEl) whoEl.textContent = uname;
+  _perm = (window._adminRole === 'viewer') ? await fetchPerm(uname) : JSON.parse(JSON.stringify(DEFAULT_PERM));
+  document.getElementById('login-gate').style.display = 'none';
+  applyRoleVisibility();
+  loadSites();
+  if (canSeeTab('manage')) loadManageSites();
+  if (canSeeTab('list')) loadList();
+  if (canSeeTab('payslip')) loadPaySlipSites();
+  if (canSeeTab('toejik')) loadToejikSites();
+  if (canSeeTab('docs')) loadDocsSites();
+  if (canSeeTab('upload')) loadUploadSites();
+  if (isMaster()) loadPermUI();
+  revealWorkerAdminBox();
+  showTab('worker');
+}
+
+function normalizePerm(p) {
+  const money = !!p.showMoney;
+  return {
+    tabs: Object.assign({}, DEFAULT_PERM.tabs, p.tabs || {}),
+    showWage: p.showWage !== undefined ? !!p.showWage : money,
+    showPay:  p.showPay  !== undefined ? !!p.showPay  : money,
+    allowEdit: !!p.allowEdit,
+    sites: Array.isArray(p.sites) ? p.sites : []
+  };
+}
+
+// 특정 보기권한 아이디의 권한 설정을 가져온다 (없으면 예전 공용 설정 → 기본값)
+async function fetchPerm(username) {
+  try {
+    let rows = await db('GET', 'app_settings', null, `key=eq.admin_perm:${encodeURIComponent(username)}&select=value`);
+    if (!rows || !rows.length) rows = await db('GET', 'app_settings', null, 'key=eq.admin_perm&select=value');
+    if (rows && rows.length && rows[0].value) return normalizePerm(JSON.parse(rows[0].value));
+  } catch(_) {}
+  return JSON.parse(JSON.stringify(DEFAULT_PERM));
+}
+
 function getAdminPass() { return _masterPass || localStorage.getItem(ADMIN_KEY) || '0000'; }
 function isMaster() { return window._adminRole === 'master'; }
 function canEdit() { return window._adminRole === 'master' || (window._adminRole === 'viewer' && _perm.allowEdit); }
@@ -535,29 +656,31 @@ async function loadAuthConfig() {
 
 function setAdminPass(p) { _masterPass = p; localStorage.setItem(ADMIN_KEY, p); }
 function confirmWithPass(msg) {
-  const p = prompt(msg + '\n\n실행하려면 마스터 비밀번호를 입력하세요:');
-  if (p === null) return false; // 취소
-  if (p !== getAdminPass()) { alert('마스터 비밀번호가 일치하지 않아 취소됐어요.'); return false; }
-  return true;
+  if (!isMaster()) { alert('이 기능은 마스터(admin)만 사용할 수 있어요.'); return false; }
+  return confirm(msg + '\n\n정말 진행할까요? (복구 불가)');
 }
 
 // 전화번호 정규화 (하이픈 제거, 숫자만)
 function normalizePhone(p) { return String(p || '').replace(/[^0-9]/g, ''); }
 
-async function db(method, table, body, params) {
+async function db(method, table, body, params, _retried) {
   let url = `${SUPA_URL}/rest/v1/${table}`;
   if (params) url += '?' + params;
   const res = await fetch(url, {
     method,
     headers: {
       'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Authorization': 'Bearer ' + authToken(),
       'Content-Type': 'application/json',
       'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.message || JSON.stringify(e)); }
+  // 세션 만료(401) → 한 번 자동 갱신 후 재시도
+  if (res.status === 401 && !_retried && _session && await restoreSession()) {
+    return db(method, table, body, params, true);
+  }
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || JSON.stringify(e)); }
   if (res.status === 204 || method === 'PATCH' || method === 'DELETE') return null;
   return res.json();
 }
@@ -611,16 +734,12 @@ function applyRoleVisibility() {
 function adminLock() {
   window._adminUnlocked = false;
   window._adminRole = null;
-  ['worker','upload','manage','list','stats','payslip','toejik','docs','settings'].forEach(tab => {
-    const lock = document.getElementById(`${tab}-lock`);
-    const content = document.getElementById(`${tab}-content`);
-    if (lock) lock.style.display = 'block';
-    if (content) content.style.display = 'none';
-  });
-  document.querySelectorAll('.tab').forEach(b => b.style.display = '');
+  clearSession();
   document.body.classList.remove('hide-wage', 'hide-pay', 'view-readonly');
-  revealWorkerAdminBox();
-  showTab('worker');
+  const g = document.getElementById('login-gate');
+  if (g) g.style.display = 'flex';
+  const idEl = document.getElementById('lg-id'); if (idEl) idEl.value = '';
+  const pwEl = document.getElementById('lg-pw'); if (pwEl) pwEl.value = '';
 }
 
 function revealWorkerAdminBox() {
@@ -670,7 +789,7 @@ function getHistoryMode() { return _histMode; }
 async function saveSetting(key, value) {
   const res = await fetch(`${SUPA_URL}/rest/v1/app_settings?on_conflict=key`, {
     method: 'POST',
-    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + authToken(), 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify({ key, value })
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || '저장 실패'); }
@@ -752,69 +871,82 @@ async function refreshHistUI() {
 }
 
 const PERM_TAB_LABELS = { worker:'공수조회', list:'인원목록', payslip:'명세서', toejik:'퇴직공제', docs:'서류', manage:'관리', upload:'업로드' };
-function loadPermUI() {
-  loadAuthConfig().then(() => {
-    const vp = document.getElementById('pm-viewpass'); if (vp) vp.value = _viewerPass || '';
-    const box = document.getElementById('pm-tabs');
-    if (box) {
-      box.innerHTML = '';
-      Object.keys(PERM_TAB_LABELS).forEach(t => {
-        const checked = _perm.tabs[t] ? 'checked' : '';
-        box.innerHTML += `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="pm-tab" data-tab="${t}" ${checked} style="transform:scale(1.3);flex:none;"><span>${PERM_TAB_LABELS[t]}</span></label>`;
-      });
-    }
-    const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!_perm.showWage;
-    const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!_perm.showPay;
-    const e = document.getElementById('pm-edit'); if (e) e.checked = !!_perm.allowEdit;
-    const sbox = document.getElementById('pm-sites');
-    if (sbox) {
-      sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중…</div>';
-      db('GET', 'work_records', null, 'select=site_name').then(data => {
-        const allSites = [...new Set(data.map(d => d.site_name))].sort();
-        if (!allSites.length) { sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">현장 없음</div>'; return; }
-        sbox.innerHTML = allSites.map(s => {
-          const ck = (_perm.sites || []).includes(s) ? 'checked' : '';
-          const sEsc = s.replace(/"/g, '&quot;');
-          return `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" class="pm-site" value="${sEsc}" ${ck} style="transform:scale(1.3);flex:none;"><span>${s}</span></label>`;
-        }).join('');
-      }).catch(() => { sbox.innerHTML = '<div style="color:#c62828;font-size:13px;">현장 목록 불러오기 실패</div>'; });
-    }
-  });
+async function loadPermUI() {
+  const idEl = document.getElementById('pm-viewid');
+  const vid = (idEl && idEl.value.trim().toLowerCase()) || 'iddcjh';
+  const p = await fetchPerm(vid);
+  const box = document.getElementById('pm-tabs');
+  if (box) {
+    box.innerHTML = '';
+    Object.keys(PERM_TAB_LABELS).forEach(t => {
+      const checked = p.tabs[t] ? 'checked' : '';
+      box.innerHTML += `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="pm-tab" data-tab="${t}" ${checked} style="transform:scale(1.3);flex:none;"><span>${PERM_TAB_LABELS[t]}</span></label>`;
+    });
+  }
+  const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!p.showWage;
+  const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!p.showPay;
+  const e = document.getElementById('pm-edit'); if (e) e.checked = !!p.allowEdit;
+  const sbox = document.getElementById('pm-sites');
+  if (sbox) {
+    sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중…</div>';
+    db('GET', 'work_records', null, 'select=site_name').then(data => {
+      const allSites = [...new Set(data.map(d => d.site_name))].sort();
+      if (!allSites.length) { sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">현장 없음</div>'; return; }
+      sbox.innerHTML = allSites.map(s => {
+        const ck = (p.sites || []).includes(s) ? 'checked' : '';
+        const sEsc = s.replace(/"/g, '&quot;');
+        return `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" class="pm-site" value="${sEsc}" ${ck} style="transform:scale(1.3);flex:none;"><span>${s}</span></label>`;
+      }).join('');
+    }).catch(() => { sbox.innerHTML = '<div style="color:#c62828;font-size:13px;">현장 목록 불러오기 실패</div>'; });
+  }
 }
 
 async function savePerm() {
   if (!requireMaster()) return;
-  const viewpass = document.getElementById('pm-viewpass').value.trim();
-  if (viewpass && viewpass === getAdminPass()) { showMsg('pm-msg', '보기 비밀번호는 마스터 비밀번호와 다르게 정해주세요', 'error'); return; }
+  const vid = (document.getElementById('pm-viewid').value.trim().toLowerCase());
+  if (!vid) { showMsg('pm-msg', '보기권한 아이디를 입력하세요', 'error'); return; }
+  if (vid === MASTER_ID) { showMsg('pm-msg', `'${MASTER_ID}'는 마스터라 항상 전체 권한이에요. 다른 아이디를 입력하세요`, 'error'); return; }
   const tabs = {};
   document.querySelectorAll('.pm-tab').forEach(c => { tabs[c.dataset.tab] = c.checked; });
   tabs.worker = true; // 공수조회는 기본 허용
   const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
   try {
-    await saveSetting('admin_viewer_pass', viewpass);
-    await saveSetting('admin_perm', JSON.stringify(perm));
-    _viewerPass = viewpass; _perm = perm;
-    showMsg('pm-msg', viewpass ? '✅ 저장됐어요 — 보기 비밀번호로 위 설정대로 보여요' : '✅ 저장됐어요 (보기 비밀번호 사용 안 함)', 'success');
+    await saveSetting('admin_perm:' + vid, JSON.stringify(perm));
+    showMsg('pm-msg', `✅ 저장됐어요 — '${vid}'로 로그인하면 위 설정대로 보여요`, 'success');
   } catch(e) {
     showMsg('pm-msg', `⚠️ 저장 실패: ${e.message}`, 'error');
   }
 }
 
-function changePassword() {
-  if (!requireMaster()) return;
+async function changePassword() {
   const oldP = document.getElementById('cp-old').value;
   const newP = document.getElementById('cp-new').value;
   const newP2 = document.getElementById('cp-new2').value;
-  if (oldP !== getAdminPass()) return showMsg('cp-msg', '현재 비밀번호가 틀렸어요', 'error');
   if (!newP) return showMsg('cp-msg', '새 비밀번호를 입력해주세요', 'error');
+  if (newP.length < 6) return showMsg('cp-msg', '새 비밀번호는 6자 이상으로 정해주세요', 'error');
   if (newP !== newP2) return showMsg('cp-msg', '새 비밀번호가 일치하지 않아요', 'error');
-  if (!confirm('마스터 비밀번호를 변경할까요?')) return;
-  setAdminPass(newP);
-  saveSetting('admin_master_pass', newP).catch(() => {});
-  document.getElementById('cp-old').value = '';
-  document.getElementById('cp-new').value = '';
-  document.getElementById('cp-new2').value = '';
-  showMsg('cp-msg', '마스터 비밀번호가 변경됐어요!', 'success');
+  // 현재 비밀번호 확인 (다시 로그인 시도)
+  try {
+    await authSignIn(currentUsername(), oldP);
+  } catch(e) {
+    return showMsg('cp-msg', '현재 비밀번호가 틀렸어요', 'error');
+  }
+  if (!confirm('로그인 비밀번호를 변경할까요?')) return;
+  try {
+    const res = await fetch(`${SUPA_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + authToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newP })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.msg || data.error_description || data.error || '변경 실패');
+    document.getElementById('cp-old').value = '';
+    document.getElementById('cp-new').value = '';
+    document.getElementById('cp-new2').value = '';
+    showMsg('cp-msg', '비밀번호가 변경됐어요!', 'success');
+  } catch(e) {
+    showMsg('cp-msg', '변경 실패: ' + e.message, 'error');
+  }
 }
 
 async function renameSite() {
@@ -1665,11 +1797,10 @@ async function adminWorkerTest() {
   try {
     await loadHistSettings();
     if (_histMode === 'none') return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (조회 차단 상태)', 'error');
-    const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,password,locked`);
+    const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,locked`);
     if (!workers || workers.length === 0) return showMsg('tw-msg', '명단에 없는 이름/번호예요', 'error');
     const worker = workers[0];
     if (worker.locked) return showMsg('tw-msg', '이 작업자는 비밀번호 잠금 상태예요 (인원목록에서 초기화 필요)', 'error');
-    if (worker.password && pw && pw !== String(worker.password)) return showMsg('tw-msg', '비밀번호가 일치하지 않아요', 'error');
     if (_histMode === 'period' && (!_histSite || !_histMonth)) return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (현장·월 미선택)', 'error');
     let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
     if (!records || records.length === 0) return showMsg('tw-msg', '근무 기록이 없어요', 'error');
@@ -2421,9 +2552,17 @@ function getPaySlipStyle() {
 const now = new Date();
 const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 document.getElementById('u-month').value = ym;
-loadHistSettings();
-loadSites();
-loadAuthConfig();
+
+// 처음 열릴 때: 저장된 로그인 세션이 있으면 자동 입장, 없으면 로그인 화면
+(async function initAdmin() {
+  const restored = await restoreSession();
+  if (restored) {
+    try { await afterLogin(); return; }
+    catch(e) { clearSession(); }
+  }
+  const g = document.getElementById('login-gate');
+  if (g) g.style.display = 'flex';
+})();
 </script>
 </body>
 </html>
