@@ -127,6 +127,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <input type="text" id="lg-id" autocomplete="username" placeholder="아이디" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <label>비밀번호</label>
     <input type="password" id="lg-pw" autocomplete="current-password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:#555;cursor:pointer;font-weight:400;"><input type="checkbox" id="lg-remember" style="width:auto;transform:scale(1.2);"> 이 기기에서 아이디 기억하기</label>
     <button class="btn primary" id="lg-btn" style="margin-top:1.2rem;" onclick="doAdminLogin()">로그인</button>
     <div id="lg-msg" class="msg"></div>
     <div style="text-align:center;margin-top:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
@@ -573,6 +574,11 @@ async function doAdminLogin() {
   try {
     _session = await authSignIn(id, pw);
     saveSession(_session);
+    // 아이디 기억하기 (비번은 저장 안 함)
+    try {
+      if (document.getElementById('lg-remember').checked) localStorage.setItem('nc_admin_saved_id', id);
+      else localStorage.removeItem('nc_admin_saved_id');
+    } catch(_) {}
     document.getElementById('lg-pw').value = '';
     document.getElementById('lg-msg').className = 'msg';
     await afterLogin();
@@ -2582,6 +2588,15 @@ document.getElementById('u-month').value = ym;
 
 // 처음 열릴 때: 저장된 로그인 세션이 있으면 자동 입장, 없으면 로그인 화면
 (async function initAdmin() {
+  // 기억해둔 아이디가 있으면 미리 채우기 (비번은 저장 안 함)
+  try {
+    const savedId = localStorage.getItem('nc_admin_saved_id');
+    if (savedId) {
+      const idEl = document.getElementById('lg-id'); if (idEl) idEl.value = savedId;
+      const rm = document.getElementById('lg-remember'); if (rm) rm.checked = true;
+      const pwEl = document.getElementById('lg-pw'); if (pwEl) pwEl.focus();
+    }
+  } catch(_) {}
   const restored = await restoreSession();
   if (restored) {
     try { await afterLogin(); return; }
