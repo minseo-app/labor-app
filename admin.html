@@ -162,7 +162,7 @@ body.hide-pay .pay-cell { display: none !important; }
     </div>
     <div id="worker-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;">
-        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
       </div>
       <div id="worker-admin-box">
         <div class="card">
@@ -184,14 +184,12 @@ body.hide-pay .pay-cell { display: none !important; }
       </div>
       <div class="card">
         <div class="card-title">🔎 작업자 공수조회 테스트 <span style="font-weight:400;color:#999;font-size:12px;">· 설정 확인용</span></div>
-        <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">위 설정대로 작업자에게 어떻게 보이는지 직접 확인해요. (비밀번호는 비워도 테스트 돼요)</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">위 설정대로 작업자에게 어떻게 보이는지 확인해요. <strong>이름만</strong> 넣어도 조회돼요. 같은 이름이 여러 명이면 골라서 볼 수 있어요.</div>
         <label>이름</label>
-        <input type="text" id="tw-name" placeholder="홍길동">
-        <label>핸드폰번호 (숫자만)</label>
-        <input type="tel" id="tw-phone" placeholder="01012345678">
-        <label>비밀번호 (선택)</label>
-        <input type="password" id="tw-pw" inputmode="numeric" maxlength="6" placeholder="비워도 됨">
-        <button class="btn primary" style="margin-top:10px;" onclick="adminWorkerTest()">🔍 테스트 조회</button>
+        <input type="text" id="tw-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')adminWorkerTest()">
+        <label>핸드폰번호 <span style="color:#aaa;font-weight:400;">(선택 · 같은 이름 구분용)</span></label>
+        <input type="tel" id="tw-phone" placeholder="비워도 됨" onkeydown="if(event.key==='Enter')adminWorkerTest()">
+        <button class="btn primary" style="margin-top:14px;" onclick="adminWorkerTest()">🔍 테스트 조회</button>
         <div id="tw-msg" class="msg"></div>
       </div>
       <div id="w-result" style="display:none;"></div>
@@ -211,7 +209,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">엑셀 파일 업로드</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <div class="info-box">
           엑셀 구조 (1~3행 헤더, 4행부터 데이터):<br>
@@ -258,7 +256,7 @@ body.hide-pay .pay-cell { display: none !important; }
     </div>
     <div id="manage-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
       </div>
       <div class="card">
         <div class="card-title collapsible-head" onclick="toggleCard('edit')">
@@ -299,7 +297,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">작업자 검색</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <div class="search-box">
           <input type="text" id="search-name" placeholder="이름 검색..." oninput="filterWorkers()">
@@ -322,7 +320,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">직종별 일별 통계</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <label>현장 선택</label>
         <select id="st-site" onchange="loadStatMonths()"><option value="">-- 현장 선택 --</option></select>
@@ -346,7 +344,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">급여명세서 출력</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <label>현장 선택</label>
         <select id="ps-site" onchange="loadPaySlipMonths()"><option value="">-- 현장 선택 --</option></select>
@@ -384,7 +382,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <span class="card-title" style="margin:0;">퇴직공제 인원 집계</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">실제 직종 인원 + 크레인·공사관리·현장관리 등 <strong>수동 인원</strong>을 더해 일별 합계를 맞춰보는 화면이에요. 수동 입력은 <strong>이 기기에만 저장</strong>되고 작업자·공수 등 다른 데이터엔 영향 없어요.</div>
         <label>현장 선택</label>
@@ -408,7 +406,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <span class="card-title" style="margin:0;">필수서류 현황</span>
-          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
         </div>
         <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">근로계약서는 <strong>월별</strong>로, 신분증·통장사본은 <strong>한 번만</strong> 받으면 체크돼요. 체크 안 된 사람은 아래 "미비 인원"에 모여요.</div>
         <label>현장 선택</label>
@@ -432,7 +430,7 @@ body.hide-pay .pay-cell { display: none !important; }
     </div>
     <div id="settings-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
+        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
       </div>
       <div class="card">
         <div class="card-title collapsible-head" onclick="toggleCard('pass')">
@@ -636,7 +634,7 @@ function visibleSites(sites) {
 }
 function canSeeTab(t) {
   if (window._adminRole === 'master') return true;
-  if (window._adminRole === 'viewer') { if (t === 'settings') return false; return !!_perm.tabs[t]; }
+  if (window._adminRole === 'viewer') { if (t === 'settings') return false; if (t === 'worker') return true; return !!_perm.tabs[t]; }
   return false;
 }
 
@@ -747,7 +745,11 @@ function revealWorkerAdminBox() {
   const content = document.getElementById('worker-content');
   if (lock) lock.style.display = window._adminUnlocked ? 'none' : 'block';
   if (content) content.style.display = window._adminUnlocked ? 'block' : 'none';
-  if (window._adminUnlocked) refreshHistUI();
+  // "작업자 이력 표시" 카드: 마스터는 항상, 보기권한자는 '공수조회' 권한이 켜졌을 때만
+  const showHistCard = isMaster() || (window._adminRole === 'viewer' && !!_perm.tabs.worker);
+  const box = document.getElementById('worker-admin-box');
+  if (box) box.style.display = showHistCard ? 'block' : 'none';
+  if (window._adminUnlocked && showHistCard) refreshHistUI();
 }
 
 async function loadUploadSites() {
@@ -870,7 +872,7 @@ async function refreshHistUI() {
   if (_histMode === 'period') { await loadHistSites(); await loadHistMonths(); }
 }
 
-const PERM_TAB_LABELS = { worker:'공수조회', list:'인원목록', payslip:'명세서', toejik:'퇴직공제', docs:'서류', manage:'관리', upload:'업로드' };
+const PERM_TAB_LABELS = { worker:'작업자 이력표시', list:'인원목록', payslip:'명세서', toejik:'퇴직공제', docs:'서류', manage:'관리', upload:'업로드' };
 async function loadPermUI() {
   const idEl = document.getElementById('pm-viewid');
   const vid = (idEl && idEl.value.trim().toLowerCase()) || 'iddcjh';
@@ -908,7 +910,7 @@ async function savePerm() {
   if (vid === MASTER_ID) { showMsg('pm-msg', `'${MASTER_ID}'는 마스터라 항상 전체 권한이에요. 다른 아이디를 입력하세요`, 'error'); return; }
   const tabs = {};
   document.querySelectorAll('.pm-tab').forEach(c => { tabs[c.dataset.tab] = c.checked; });
-  tabs.worker = true; // 공수조회는 기본 허용
+  // '작업자 이력표시'(worker)는 체크한 대로 저장 (강제 켜기 없음)
   const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
   try {
     await saveSetting('admin_perm:' + vid, JSON.stringify(perm));
@@ -1787,23 +1789,48 @@ async function saveEditTable() {
   showMsg('ed-msg', fail===0 ? `${ok}명 저장 완료!` : `저장 ${ok}명 / 실패 ${fail}명`, fail===0?'success':'error');
 }
 
+let _twMatches = [];
+
+function fmtPhone(p) {
+  p = String(p || '').replace(/[^0-9]/g, '');
+  if (p.length === 11) return p.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (p.length === 10) return p.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+  return p || '(번호 없음)';
+}
+
 async function adminWorkerTest() {
   const name = document.getElementById('tw-name').value.trim();
   const phone = normalizePhone(document.getElementById('tw-phone').value);
-  const pw = document.getElementById('tw-pw').value.trim();
   const resultEl = document.getElementById('w-result');
-  if (resultEl) resultEl.style.display = 'none';
-  if (!name || !phone) return showMsg('tw-msg', '이름과 핸드폰번호를 입력하세요', 'error');
+  if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+  if (!name) return showMsg('tw-msg', '이름을 입력하세요', 'error');
   try {
     await loadHistSettings();
     if (_histMode === 'none') return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (조회 차단 상태)', 'error');
-    const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,locked`);
-    if (!workers || workers.length === 0) return showMsg('tw-msg', '명단에 없는 이름/번호예요', 'error');
-    const worker = workers[0];
+    let params = `name=eq.${encodeURIComponent(name)}&select=id,name,job_type,locked,phone&order=phone`;
+    if (phone) params = `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,locked,phone`;
+    const workers = await db('GET', 'workers', null, params);
+    if (!workers || workers.length === 0) return showMsg('tw-msg', '명단에 없는 이름이에요', 'error');
+    if (workers.length === 1) { await previewWorker(workers[0]); return; }
+    // 동명이인 → 전화번호로 선택
+    _twMatches = workers;
+    showMsg('tw-msg', `같은 이름이 ${workers.length}명 있어요. 아래에서 한 명을 선택하세요 ↓`, 'success');
+    const wrap = document.getElementById('w-result');
+    wrap.innerHTML = `<div class="card"><div class="card-title">이름이 같은 작업자 (${workers.length}명)</div>` +
+      workers.map((w, i) => `<div class="worker-row" style="display:flex;justify-content:space-between;align-items:center;">
+        <div><strong>${w.name}</strong> <span style="color:#888;font-size:13px;">${fmtPhone(w.phone)}</span>${w.job_type ? ` <span class="badge-job" style="margin:0 0 0 6px;">${w.job_type}</span>` : ''}${w.locked ? ' <span style="color:#c62828;font-size:12px;">🔒잠김</span>' : ''}</div>
+        <button class="btn" style="width:auto;margin:0;padding:6px 12px;font-size:13px;" onclick="previewWorker(_twMatches[${i}])">이 사람 보기</button>
+      </div>`).join('') + `</div>`;
+    wrap.style.display = 'block';
+  } catch(e) { showMsg('tw-msg', e.message, 'error'); }
+}
+
+async function previewWorker(worker) {
+  try {
     if (worker.locked) return showMsg('tw-msg', '이 작업자는 비밀번호 잠금 상태예요 (인원목록에서 초기화 필요)', 'error');
     if (_histMode === 'period' && (!_histSite || !_histMonth)) return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (현장·월 미선택)', 'error');
     let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
-    if (!records || records.length === 0) return showMsg('tw-msg', '근무 기록이 없어요', 'error');
+    if (!records || records.length === 0) return showMsg('tw-msg', `${worker.name}님(${fmtPhone(worker.phone)})은 근무 기록이 없어요`, 'error');
     if (_histMode === 'period') {
       records = records.filter(r => r.site_name === _histSite && r.year_month === _histMonth);
       if (!records.length) return showMsg('tw-msg', '해당 기간 근무 기록이 없어요', 'error');
