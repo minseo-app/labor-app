@@ -20,6 +20,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .msg { font-size: 15px; padding: 13px 14px; border-radius: 10px; margin-top: 1rem; display: none; }
 .msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
 .msg.error { background: #fdecea; color: #c62828; display: block; }
+.msg.info { background: #e3f2fd; color: #1565c0; display: block; }
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1.2rem 0; }
 .stat { background: #f5f5f5; border-radius: 10px; padding: 1.3rem; text-align: center; }
 .stat .val { font-size: 38px; font-weight: 800; color: #185FA5; }
@@ -40,19 +41,25 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <body>
 <div class="container">
   <h1>⚒️ 노무비 공수 조회</h1>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0707-S1 (보안 1단계 · 서버조회)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0707-S2 (2단계 조회)</div>
 
   <div class="card">
     <div class="card-title">본인 공수 조회</div>
     <label>이름</label>
-    <input type="text" id="w-name" placeholder="홍길동">
+    <input type="text" id="w-name" placeholder="홍길동" oninput="resetLookup()">
     <label>핸드폰번호 (숫자만)</label>
-    <input type="tel" id="w-phone" placeholder="01012345678">
-    <label>비밀번호 (숫자 6자리)</label>
-    <input type="password" id="w-pw" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●">
-    <button class="btn primary" onclick="workerSubmit()">🔍 조회하기</button>
+    <input type="tel" id="w-phone" placeholder="01012345678" oninput="resetLookup()">
+
+    <!-- 기존 사용자에게만 나타나는 비밀번호칸 -->
+    <div id="pw-row" style="display:none;">
+      <label>비밀번호 (숫자 6자리)</label>
+      <input type="password" id="w-pw" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●" onkeydown="if(event.key==='Enter')workerSubmit()">
+    </div>
+
+    <button class="btn primary" id="submit-btn" onclick="workerSubmit()">🔍 조회하기</button>
     <div id="w-msg" class="msg"></div>
 
+    <!-- 처음 온 사람: 동의 + 비밀번호 만들기 -->
     <div id="signup-box" style="display:none;margin-top:1.2rem;border-top:1px solid #eee;padding-top:1.2rem;">
       <div style="font-weight:700;color:#185FA5;margin-bottom:10px;font-size:17px;">처음 오셨네요! 비밀번호를 만들어요</div>
       <div style="font-size:14px;color:#555;background:#f9f9f9;border-radius:10px;padding:14px;line-height:1.7;">
@@ -65,6 +72,8 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
       <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:600;cursor:pointer;font-size:16px;">
         <input type="checkbox" id="consent-chk" style="width:auto;transform:scale(1.4);"> 개인정보 수집·이용에 동의합니다
       </label>
+      <label>새 비밀번호 (숫자 6자리)</label>
+      <input type="password" id="signup-pw" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●">
       <button class="btn primary" onclick="doSignup()">비밀번호 설정</button>
     </div>
   </div>
@@ -108,37 +117,80 @@ function showMsg(id, text, type) {
   el.textContent = text;
 }
 
-let _pendingSignup = null; // 최초 가입 대기 (입력한 이름/전화/비번)
+let _pendingSignup = null; // 최초 가입 대기 {name, phone}
+
+// 이름/전화가 바뀌면 다시 처음 상태로 (비번칸·가입안내 숨김)
+function resetLookup() {
+  const pr = document.getElementById('pw-row'); if (pr) pr.style.display = 'none';
+  const sb = document.getElementById('signup-box'); if (sb) sb.style.display = 'none';
+  const rs = document.getElementById('w-result'); if (rs) rs.style.display = 'none';
+  const pw = document.getElementById('w-pw'); if (pw) pw.value = '';
+  const msg = document.getElementById('w-msg'); if (msg) msg.className = 'msg';
+  _pendingSignup = null;
+}
 
 async function workerSubmit() {
   const name = document.getElementById('w-name').value.trim();
   const phone = normalizePhone(document.getElementById('w-phone').value);
-  const pw = document.getElementById('w-pw').value.trim();
-  document.getElementById('signup-box').style.display = 'none';
-  document.getElementById('w-result').style.display = 'none';
   if (!name || !phone) return showMsg('w-msg', '이름과 핸드폰번호를 입력해주세요', 'error');
-  if (!/^\d{6}$/.test(pw)) return showMsg('w-msg', '비밀번호는 숫자 6자리로 입력해주세요', 'error');
+
+  const pwRow = document.getElementById('pw-row');
+  const pwVisible = pwRow && pwRow.style.display !== 'none';
 
   try {
-    const r = await rpc('worker_login', { p_name: name, p_phone: phone, p_pw: pw });
-    handleLoginResult(r, { name, phone, pw });
+    if (pwVisible) {
+      // 2단계: 기존 사용자 — 비밀번호 확인
+      const pw = document.getElementById('w-pw').value.trim();
+      if (!/^\d{6}$/.test(pw)) return showMsg('w-msg', '비밀번호는 숫자 6자리로 입력해주세요', 'error');
+      const r = await rpc('worker_login', { p_name: name, p_phone: phone, p_pw: pw });
+      handleLoginResult(r, { name, phone, pw });
+      return;
+    }
+    // 1단계: 이름+전화로 처음/기존 판별
+    const c = await rpc('worker_check', { p_name: name, p_phone: phone });
+    handleCheckResult(c, { name, phone });
   } catch(e) {
     showMsg('w-msg', e.message, 'error');
   }
 }
 
-function handleLoginResult(r, ctx) {
-  const status = r && r.status;
-  if (status === 'not_found')   return showMsg('w-msg', '이름 또는 핸드폰번호가 명단에 없어요. 관리자에게 문의하세요', 'error');
-  if (status === 'locked')      return showMsg('w-msg', '비밀번호를 여러 번 틀려 잠겼어요. 관리자에게 문의해 초기화하세요', 'error');
-  if (status === 'blocked')     return showMsg('w-msg', '아직 출력 작업 중입니다 🛠️', 'error');
-  if (status === 'bad_pw_format') return showMsg('w-msg', '비밀번호는 숫자 6자리로 입력해주세요', 'error');
-  if (status === 'wrong_pw')    return showMsg('w-msg', `비밀번호가 틀렸어요 (${r.fails}/3회)`, 'error');
-  if (status === 'need_signup') {
-    // 최초 — 동의 + 비번 설정 안내
+function handleCheckResult(c, ctx) {
+  const s = c && c.status;
+  if (s === 'not_found') return showMsg('w-msg', '이름 또는 핸드폰번호가 명단에 없어요. 관리자에게 문의하세요', 'error');
+  if (s === 'locked')    return showMsg('w-msg', '비밀번호를 여러 번 틀려 잠겼어요. 관리자에게 문의해 초기화하세요', 'error');
+  if (s === 'need_signup') {
+    // 처음 온 사람 → 동의 + 비번 만들기
     _pendingSignup = ctx;
     document.getElementById('w-msg').className = 'msg';
     document.getElementById('consent-chk').checked = false;
+    document.getElementById('signup-pw').value = '';
+    document.getElementById('signup-box').style.display = 'block';
+    return;
+  }
+  if (s === 'need_pw') {
+    // 기존 사람 → 비밀번호칸 보여주고 입력 유도
+    document.getElementById('pw-row').style.display = 'block';
+    document.getElementById('w-pw').value = '';
+    showMsg('w-msg', '비밀번호를 입력하고 다시 [조회하기]를 눌러주세요', 'info');
+    document.getElementById('w-pw').focus();
+    return;
+  }
+  showMsg('w-msg', '조회 중 문제가 생겼어요. 잠시 후 다시 시도해주세요', 'error');
+}
+
+function handleLoginResult(r, ctx) {
+  const status = r && r.status;
+  if (status === 'not_found')     return showMsg('w-msg', '이름 또는 핸드폰번호가 명단에 없어요. 관리자에게 문의하세요', 'error');
+  if (status === 'locked')        return showMsg('w-msg', '비밀번호를 여러 번 틀려 잠겼어요. 관리자에게 문의해 초기화하세요', 'error');
+  if (status === 'blocked')       return showMsg('w-msg', '아직 출력 작업 중입니다 🛠️', 'error');
+  if (status === 'bad_pw_format') return showMsg('w-msg', '비밀번호는 숫자 6자리로 입력해주세요', 'error');
+  if (status === 'wrong_pw')      return showMsg('w-msg', `비밀번호가 틀렸어요 (${r.fails}/3회)`, 'error');
+  if (status === 'need_signup') {
+    _pendingSignup = { name: ctx.name, phone: ctx.phone };
+    document.getElementById('pw-row').style.display = 'none';
+    document.getElementById('w-msg').className = 'msg';
+    document.getElementById('consent-chk').checked = false;
+    document.getElementById('signup-pw').value = '';
     document.getElementById('signup-box').style.display = 'block';
     return;
   }
@@ -153,7 +205,9 @@ function handleLoginResult(r, ctx) {
 async function doSignup() {
   if (!_pendingSignup) return;
   if (!document.getElementById('consent-chk').checked) return showMsg('w-msg', '개인정보 수집·이용에 동의(체크)해주세요', 'error');
-  const { name, phone, pw } = _pendingSignup;
+  const pw = document.getElementById('signup-pw').value.trim();
+  if (!/^\d{6}$/.test(pw)) return showMsg('w-msg', '비밀번호는 숫자 6자리로 정해주세요', 'error');
+  const { name, phone } = _pendingSignup;
   try {
     const r = await rpc('worker_signup', { p_name: name, p_phone: phone, p_pw: pw, p_consent: true });
     if (r.status === 'ok') {
@@ -163,7 +217,7 @@ async function doSignup() {
       renderWorkerResult(r.worker, r.records || []);
       return;
     }
-    if (r.status === 'already')   return showMsg('w-msg', '이미 비밀번호가 있어요. 조회하기로 다시 시도해주세요', 'error');
+    if (r.status === 'already')   return showMsg('w-msg', '이미 비밀번호가 있어요. [조회하기]로 다시 시도해주세요', 'error');
     if (r.status === 'not_found') return showMsg('w-msg', '명단에 없어요. 관리자에게 문의하세요', 'error');
     if (r.status === 'blocked')   return showMsg('w-msg', '아직 출력 작업 중입니다 🛠️', 'error');
     showMsg('w-msg', '가입 중 문제가 생겼어요. 다시 시도해주세요', 'error');
