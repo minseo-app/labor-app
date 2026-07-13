@@ -135,7 +135,7 @@ body.hide-pay .pay-cell { display: none !important; }
 </div>
 
 <div class="container">
-  <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
+  <h1>⚒️ 노무비 공수 조회 <span id="role-badge" style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
   <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0707-S3 (아이디 로그인·보안)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
@@ -609,6 +609,8 @@ async function afterLogin() {
   const uname = currentUsername();
   window._adminRole = (uname === MASTER_ID) ? 'master' : 'viewer';
   window._adminUnlocked = true;
+  const badge = document.getElementById('role-badge');
+  if (badge) badge.textContent = (window._adminRole === 'master') ? '[마스터]' : '[관리자]';
   const whoEl = document.getElementById('cp-who'); if (whoEl) whoEl.textContent = uname;
   _perm = (window._adminRole === 'viewer') ? await fetchPerm(uname) : JSON.parse(JSON.stringify(DEFAULT_PERM));
   document.getElementById('login-gate').style.display = 'none';
