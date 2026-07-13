@@ -609,6 +609,7 @@ async function afterLogin() {
   const uname = currentUsername();
   window._adminRole = (uname === MASTER_ID) ? 'master' : 'viewer';
   window._adminUnlocked = true;
+  resetEditUI();
   const badge = document.getElementById('role-badge');
   if (badge) badge.textContent = (window._adminRole === 'master') ? '[마스터]' : '[관리자]';
   const whoEl = document.getElementById('cp-who'); if (whoEl) whoEl.textContent = uname;
@@ -764,6 +765,7 @@ function adminLock() {
   window._adminUnlocked = false;
   window._adminRole = null;
   clearSession();
+  resetEditUI();
   document.body.classList.remove('hide-wage', 'hide-pay', 'view-readonly');
   const g = document.getElementById('login-gate');
   if (g) g.style.display = 'flex';
@@ -1410,6 +1412,14 @@ async function deleteData() {
 }
 
 let editData = null;
+
+// 로그인/로그아웃 시 관리 편집 화면을 깨끗이 비움 (역할 바뀔 때 옛 화면 잔상 방지)
+function resetEditUI() {
+  editData = null;
+  const r = document.getElementById('ed-result'); if (r) r.innerHTML = '';
+  const s = document.getElementById('ed-site'); if (s) s.value = '';
+  const m = document.getElementById('ed-month'); if (m) m.innerHTML = '<option value="">-- 월 선택 --</option>';
+}
 
 async function loadEditMonths() {
   const site = document.getElementById('ed-site').value;
