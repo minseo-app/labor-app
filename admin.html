@@ -482,7 +482,7 @@ body.hide-pay .pay-cell { display: none !important; }
           <div style="margin-top:6px;">
             <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-wage" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>일당</strong> 보이기</span></label>
             <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-pay" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>노무비 총금액</strong> 보이기</span></label>
-            <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-edit" style="transform:scale(1.3);flex:none;"><span style="flex:1;"><strong>수정·업로드·삭제</strong> 허용 <span style="color:#999;">(끄면 읽기 전용)</span></span></label>
+            <div style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:9px;margin:8px 0;color:#185FA5;background:#eef4fb;padding:9px 12px;border-radius:8px;"><span>👁️</span><span style="flex:1;">보기권한 아이디는 <strong>항상 보기 전용</strong>이에요. 수정·저장·삭제·업로드는 마스터(admin)만 할 수 있어요.</span></div>
           </div>
           <label style="margin-top:16px;display:block;">보이는 현장 <span style="color:#999;font-weight:400;font-size:12px;">(아무것도 체크 안 하면 전체 허용)</span></label>
           <div id="pm-sites" style="margin-top:6px;display:flex;flex-direction:column;gap:7px;max-height:180px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:10px;"></div>
@@ -642,15 +642,21 @@ function normalizePerm(p) {
 async function fetchPerm(username) {
   try {
     let rows = await db('GET', 'app_settings', null, `key=eq.admin_perm:${encodeURIComponent(username)}&select=value`);
-    if (!rows || !rows.length) rows = await db('GET', 'app_settings', null, 'key=eq.admin_perm&select=value');
     if (rows && rows.length && rows[0].value) return normalizePerm(JSON.parse(rows[0].value));
+    // 이 아이디만의 설정이 아직 없으면 → 예전 공용 설정을 참고하되, 수정 권한은 안 물려줌
+    rows = await db('GET', 'app_settings', null, 'key=eq.admin_perm&select=value');
+    if (rows && rows.length && rows[0].value) {
+      const p = normalizePerm(JSON.parse(rows[0].value));
+      p.allowEdit = false;   // 예전 공용 설정에서 수정권한은 물려받지 않음 (마스터가 명시적으로 켜야 함)
+      return p;
+    }
   } catch(_) {}
   return JSON.parse(JSON.stringify(DEFAULT_PERM));
 }
 
 function getAdminPass() { return _masterPass || localStorage.getItem(ADMIN_KEY) || '0000'; }
 function isMaster() { return window._adminRole === 'master'; }
-function canEdit() { return window._adminRole === 'master' || (window._adminRole === 'viewer' && _perm.allowEdit); }
+function canEdit() { return window._adminRole === 'master'; }
 function requireMaster(msg) { if (!isMaster()) { alert(msg || '이 기능은 마스터 비밀번호로만 사용할 수 있어요.'); return false; } return true; }
 function requireEdit() { if (!canEdit()) { alert('보기 전용 권한이라 수정할 수 없어요.'); return false; } return true; }
 function visibleSites(sites) {
@@ -751,7 +757,7 @@ function applyRoleVisibility() {
   });
   document.body.classList.toggle('hide-wage', window._adminRole === 'viewer' && !_perm.showWage);
   document.body.classList.toggle('hide-pay', window._adminRole === 'viewer' && !_perm.showPay);
-  document.body.classList.toggle('view-readonly', window._adminRole === 'viewer' && !_perm.allowEdit);
+  document.body.classList.toggle('view-readonly', window._adminRole === 'viewer');
 }
 
 function adminLock() {
@@ -917,7 +923,6 @@ async function loadPermUI() {
   }
   const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!p.showWage;
   const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!p.showPay;
-  const e = document.getElementById('pm-edit'); if (e) e.checked = !!p.allowEdit;
   const sbox = document.getElementById('pm-sites');
   if (sbox) {
     sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중…</div>';
@@ -941,7 +946,7 @@ async function savePerm() {
   const tabs = {};
   document.querySelectorAll('.pm-tab').forEach(c => { tabs[c.dataset.tab] = c.checked; });
   // '작업자 이력표시'(worker)는 체크한 대로 저장 (강제 켜기 없음)
-  const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
+  const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: false, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
   try {
     await saveSetting('admin_perm:' + vid, JSON.stringify(perm));
     showMsg('pm-msg', `✅ 저장됐어요 — '${vid}'로 로그인하면 위 설정대로 보여요`, 'success');
