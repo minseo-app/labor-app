@@ -51,6 +51,10 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .edit-table td.ss { position: static !important; left: auto !important; box-shadow: none !important; background: #eef3f9 !important; }
 .edit-table .edit-cell.red-cell { background: #ffebee; }
 .edit-table .edit-cell input { padding: 6px 2px; touch-action: manipulation; }
+.edit-table tr.sel-row td { background: #fff8e1 !important; }
+.edit-table tr.sel-row td:nth-child(3) { background: #fff3cd !important; }
+.edit-table tr.sel-row .sticky-col, .edit-table tr.sel-row td:nth-child(2) { background: #fff3cd !important; }
+.edit-table tr.sel-row .edit-cell.red-cell { background: #ffebee !important; }
 .edit-table .sticky-col { position: sticky; left: 0; background: #fafafa; z-index: 1; min-width: 32px; width: 32px; padding: 5px 4px; }
 .edit-table th.sticky-col { z-index: 3; }
 .edit-table th:nth-child(2), .edit-table td:nth-child(2) { position: sticky; left: 32px; background: #fafafa; z-index: 1; min-width: 34px; width: 34px; }
@@ -115,7 +119,7 @@ body.hide-pay .pay-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-B (비번 자동입력 차단)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-C (선택 줄 색표시)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -1529,6 +1533,12 @@ function updateSelSum() {
   const checks = [...document.querySelectorAll('.ed-check:checked')];
   const selected = checks.length > 0;
   const active = selected ? checks.map(c => list[parseInt(c.dataset.pi)]) : list;
+
+  // 체크된 줄 색 표시
+  document.querySelectorAll('.ed-check').forEach(c => {
+    const tr = c.closest('tr');
+    if (tr) tr.classList.toggle('sel-row', c.checked);
+  });
 
   // 일별 합계 + 전체 합계 (선택된 사람 기준, 미선택이면 전체)
   let gDays = 0, gWork = 0, gAmt = 0; const dayTot = {}, dayCnt = {};
