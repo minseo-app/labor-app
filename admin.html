@@ -109,35 +109,13 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 body.hide-wage .wage-cell { display: none !important; }
 body.hide-pay .pay-cell { display: none !important; }
 .lock-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; color: #888; }
-#login-gate { position: fixed; inset: 0; background: #f5f5f5; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-.login-box { background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; padding: 2rem 1.6rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-.login-box h2 { font-size: 20px; font-weight: 700; text-align: center; color: #1a1a1a; margin-bottom: 4px; }
-.login-box .sub { font-size: 13px; color: #999; text-align: center; margin-bottom: 1.4rem; }
-.login-box label { font-size: 13px; color: #666; margin-top: 14px; }
-.login-box input { width: 100%; padding: 13px 14px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; background: #fafafa; }
-.login-box input:focus { border-color: #185FA5; background: #fff; }
 </style>
 </head>
 <body>
-<div id="login-gate">
-  <div class="login-box">
-    <h2>⚒️ 노무비 공수 조회</h2>
-    <div class="sub">관리자 로그인</div>
-    <label>아이디</label>
-    <input type="text" id="lg-id" autocomplete="username" placeholder="아이디" onkeydown="if(event.key==='Enter')doAdminLogin()">
-    <label>비밀번호</label>
-    <input type="password" id="lg-pw" autocomplete="current-password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
-    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:#555;cursor:pointer;font-weight:400;"><input type="checkbox" id="lg-remember" style="width:auto;transform:scale(1.2);"> 이 기기에서 아이디 기억하기</label>
-    <button class="btn primary" id="lg-btn" style="margin-top:1.2rem;" onclick="doAdminLogin()">로그인</button>
-    <div id="lg-msg" class="msg"></div>
-    <div style="text-align:center;margin-top:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  </div>
-</div>
-
 <div class="container">
-  <h1>⚒️ 노무비 공수 조회 <span id="role-badge" style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
+  <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0707-S3 (아이디 로그인·보안)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-B (비번 자동입력 차단)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -156,14 +134,14 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="worker-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="aw-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="aw-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('worker')">확인</button>
       <div id="aw-msg" class="msg"></div>
       <p style="font-size:12px;color:#999;margin-top:12px;">작업자는 <a href="labor-app.html" style="color:#185FA5;">작업자용 페이지</a>에서 조회하세요.</p>
     </div>
     <div id="worker-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;">
-        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
       </div>
       <div id="worker-admin-box">
         <div class="card">
@@ -185,41 +163,26 @@ body.hide-pay .pay-cell { display: none !important; }
       </div>
       <div class="card">
         <div class="card-title">🔎 작업자 공수조회 테스트 <span style="font-weight:400;color:#999;font-size:12px;">· 설정 확인용</span></div>
-        <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">위 설정대로 작업자에게 어떻게 보이는지 확인해요. <strong>이름만</strong> 넣어도 조회돼요. 같은 이름이 여러 명이면 골라서 볼 수 있어요.</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">위 설정대로 작업자에게 어떻게 보이는지 직접 확인해요. (비밀번호는 비워도 테스트 돼요)</div>
         <label>이름</label>
-        <input type="text" id="tw-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')adminWorkerTest()">
-        <label>핸드폰번호 <span style="color:#aaa;font-weight:400;">(선택 · 같은 이름 구분용)</span></label>
-        <input type="tel" id="tw-phone" placeholder="비워도 됨" onkeydown="if(event.key==='Enter')adminWorkerTest()">
-        <button class="btn primary" style="margin-top:14px;" onclick="adminWorkerTest()">🔍 테스트 조회</button>
+        <input type="text" id="tw-name" placeholder="홍길동">
+        <label>핸드폰번호 (숫자만)</label>
+        <input type="tel" id="tw-phone" placeholder="01012345678">
+        <label>비밀번호 (선택)</label>
+        <input type="password" id="tw-pw" inputmode="numeric" maxlength="6" placeholder="비워도 됨" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+        <button class="btn primary" style="margin-top:10px;" onclick="adminWorkerTest()">🔍 테스트 조회</button>
         <div id="tw-msg" class="msg"></div>
       </div>
       <div id="w-result" style="display:none;"></div>
-
-      <!-- 보기권한자 전용: 내 비밀번호 변경 -->
-      <div class="card" id="myPwCard" style="display:none;">
-        <div class="card-title collapsible-head" onclick="toggleCard('mypw')">
-          <span>🔑 내 비밀번호 변경</span>
-          <span class="toggle-arrow" id="arrow-mypw">▼ 펼치기</span>
-        </div>
-        <div class="card-body" id="body-mypw" style="display:none;">
-          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">지금 로그인한 아이디(<strong id="mypw-who"></strong>)의 비밀번호를 바꿔요.</div>
-          <label>현재 비밀번호</label>
-          <input type="password" id="vp-old" placeholder="현재 비밀번호">
-          <label>새 비밀번호</label>
-          <input type="password" id="vp-new" placeholder="새 비밀번호 (6자 이상)">
-          <label>새 비밀번호 확인</label>
-          <input type="password" id="vp-new2" placeholder="새 비밀번호 다시 입력">
-          <button class="btn primary" onclick="doChangePassword('vp-old','vp-new','vp-new2','vp-msg')">비밀번호 변경</button>
-          <div id="vp-msg" class="msg"></div>
-        </div>
-      </div>
     </div>
   </div>
+
+  <!-- 엑셀 업로드 -->
   <div id="screen-upload" class="screen">
     <div id="upload-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="al-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="al-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('upload')">확인</button>
       <div id="al-msg" class="msg"></div>
     </div>
@@ -227,7 +190,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">엑셀 파일 업로드</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <div class="info-box">
           엑셀 구조 (1~3행 헤더, 4행부터 데이터):<br>
@@ -268,13 +231,13 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="manage-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="am-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="am-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('manage')">확인</button>
       <div id="am-msg" class="msg"></div>
     </div>
     <div id="manage-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
       </div>
       <div class="card">
         <div class="card-title collapsible-head" onclick="toggleCard('edit')">
@@ -307,7 +270,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="list-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="alist-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="alist-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('list')">확인</button>
       <div id="alist-msg" class="msg"></div>
     </div>
@@ -315,7 +278,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">작업자 검색</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <div class="search-box">
           <input type="text" id="search-name" placeholder="이름 검색..." oninput="filterWorkers()">
@@ -330,7 +293,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="stats-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="astats-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="astats-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('stats')">확인</button>
       <div id="astats-msg" class="msg"></div>
     </div>
@@ -338,7 +301,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">직종별 일별 통계</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <label>현장 선택</label>
         <select id="st-site" onchange="loadStatMonths()"><option value="">-- 현장 선택 --</option></select>
@@ -354,7 +317,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="payslip-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="apay-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="apay-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('payslip')">확인</button>
       <div id="apay-msg" class="msg"></div>
     </div>
@@ -362,7 +325,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="card-title" style="margin:0;">급여명세서 출력</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <label>현장 선택</label>
         <select id="ps-site" onchange="loadPaySlipMonths()"><option value="">-- 현장 선택 --</option></select>
@@ -392,7 +355,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="toejik-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="atj-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="atj-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('toejik')">확인</button>
       <div id="atj-msg" class="msg"></div>
     </div>
@@ -400,7 +363,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <span class="card-title" style="margin:0;">퇴직공제 인원 집계</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">실제 직종 인원 + 크레인·공사관리·현장관리 등 <strong>수동 인원</strong>을 더해 일별 합계를 맞춰보는 화면이에요. 수동 입력은 <strong>이 기기에만 저장</strong>되고 작업자·공수 등 다른 데이터엔 영향 없어요.</div>
         <label>현장 선택</label>
@@ -416,7 +379,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="docs-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="adoc-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="adoc-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('docs')">확인</button>
       <div id="adoc-msg" class="msg"></div>
     </div>
@@ -424,7 +387,7 @@ body.hide-pay .pay-cell { display: none !important; }
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <span class="card-title" style="margin:0;">필수서류 현황</span>
-          <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+          <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
         </div>
         <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">근로계약서는 <strong>월별</strong>로, 신분증·통장사본은 <strong>한 번만</strong> 받으면 체크돼요. 체크 안 된 사람은 아래 "미비 인원"에 모여요.</div>
         <label>현장 선택</label>
@@ -442,27 +405,26 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="settings-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="aset-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
+      <input type="password" id="aset-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
       <button class="btn primary" onclick="adminUnlock('settings')">확인</button>
       <div id="aset-msg" class="msg"></div>
     </div>
     <div id="settings-content" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-        <button class="lock-btn" onclick="adminLock()">↩ 로그아웃</button>
+        <button class="lock-btn" onclick="adminLock()">🔒 잠금</button>
       </div>
       <div class="card">
         <div class="card-title collapsible-head" onclick="toggleCard('pass')">
-          <span>🔑 내 로그인 비밀번호 변경</span>
+          <span>🔑 마스터 비밀번호 변경</span>
           <span class="toggle-arrow" id="arrow-pass">▼ 펼치기</span>
         </div>
         <div class="card-body" id="body-pass" style="display:none;">
-          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">지금 로그인한 아이디(<strong id="cp-who">admin</strong>)의 비밀번호를 바꿔요.</div>
           <label>현재 비밀번호</label>
-          <input type="password" id="cp-old" placeholder="현재 비밀번호">
+          <input type="password" id="cp-old" placeholder="현재 마스터 비밀번호" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
           <label>새 비밀번호</label>
-          <input type="password" id="cp-new" placeholder="새 비밀번호">
+          <input type="password" id="cp-new" placeholder="새 비밀번호" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
           <label>새 비밀번호 확인</label>
-          <input type="password" id="cp-new2" placeholder="새 비밀번호 다시 입력">
+          <input type="password" id="cp-new2" placeholder="새 비밀번호 다시 입력" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
           <button class="btn primary" onclick="changePassword()">비밀번호 변경</button>
           <div id="cp-msg" class="msg"></div>
         </div>
@@ -473,16 +435,16 @@ body.hide-pay .pay-cell { display: none !important; }
           <span class="toggle-arrow" id="arrow-perm">▼ 펼치기</span>
         </div>
         <div class="card-body" id="body-perm" style="display:none;">
-          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">보기권한 아이디로 로그인한 사람에게 <strong>무엇을 보여줄지</strong> 정해요. 마스터(<strong>admin</strong>)는 항상 전체 권한이에요. <br>※ 계정 자체는 Supabase 화면에서 만들고, 여기선 그 아이디의 <strong>권한</strong>만 정해요.</div>
-          <label>보기권한 아이디</label>
-          <input type="text" id="pm-viewid" value="iddcjh" placeholder="예: iddcjh" onchange="loadPermUI()">
+          <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5;">보기 비밀번호로 들어온 사람에게 <strong>무엇을 보여줄지</strong> 정해요. 마스터 비밀번호는 항상 전체 권한이에요.</div>
+          <label>보기 비밀번호 (비우면 사용 안 함)</label>
+          <input type="text" id="pm-viewpass" placeholder="예: 5678">
           <label style="margin-top:12px;display:block;">보여줄 메뉴</label>
           <div id="pm-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-top:6px;"></div>
           <label style="margin-top:16px;display:block;">세부 옵션</label>
           <div style="margin-top:6px;">
             <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-wage" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>일당</strong> 보이기</span></label>
             <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-pay" style="transform:scale(1.3);flex:none;"><span style="flex:1;">인원목록에서 <strong>노무비 총금액</strong> 보이기</span></label>
-            <div style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:9px;margin:8px 0;color:#185FA5;background:#eef4fb;padding:9px 12px;border-radius:8px;"><span>👁️</span><span style="flex:1;">보기권한 아이디는 <strong>항상 보기 전용</strong>이에요. 수정·저장·삭제·업로드는 마스터(admin)만 할 수 있어요.</span></div>
+            <label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;margin:8px 0;cursor:pointer;"><input type="checkbox" id="pm-edit" style="transform:scale(1.3);flex:none;"><span style="flex:1;"><strong>수정·업로드·삭제</strong> 허용 <span style="color:#999;">(끄면 읽기 전용)</span></span></label>
           </div>
           <label style="margin-top:16px;display:block;">보이는 현장 <span style="color:#999;font-weight:400;font-size:12px;">(아무것도 체크 안 하면 전체 허용)</span></label>
           <div id="pm-sites" style="margin-top:6px;display:flex;flex-direction:column;gap:7px;max-height:180px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:10px;"></div>
@@ -542,122 +504,9 @@ let _masterPass = null;
 let _viewerPass = '';
 window._adminRole = null; // 'master' | 'viewer'
 
-// ===== 로그인 (아이디+비번 → 뒤에서 Supabase Auth, 아이디는 이메일처럼 처리) =====
-const AUTH_SUFFIX = '@nc-labor.app';   // 화면엔 안 보이는 내부 꼬리표
-const MASTER_ID = 'admin';             // 이 아이디로 로그인하면 마스터(전체 권한)
-let _session = null;                   // { access_token, refresh_token, user }
-
-function authToken() { return (_session && _session.access_token) || SUPA_KEY; }
-function currentUsername() {
-  const email = (_session && _session.user && _session.user.email) || '';
-  return email.replace(AUTH_SUFFIX, '');
-}
-function saveSession(d) { try { localStorage.setItem('nc_admin_refresh', d.refresh_token || ''); } catch(_) {} }
-function clearSession() { _session = null; try { localStorage.removeItem('nc_admin_refresh'); } catch(_) {} }
-
-async function authSignIn(username, password) {
-  const email = username.toLowerCase() + AUTH_SUFFIX;
-  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error_description || data.msg || data.error || '로그인 실패');
-  return data;
-}
-
-async function restoreSession() {
-  let rt = null; try { rt = localStorage.getItem('nc_admin_refresh'); } catch(_) {}
-  if (!rt) return false;
-  try {
-    const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: rt })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.access_token) return false;
-    _session = data; saveSession(data); return true;
-  } catch(_) { return false; }
-}
-
-async function doAdminLogin() {
-  const id = document.getElementById('lg-id').value.trim().toLowerCase();
-  const pw = document.getElementById('lg-pw').value;
-  if (!id || !pw) return showMsg('lg-msg', '아이디와 비밀번호를 입력하세요', 'error');
-  const btn = document.getElementById('lg-btn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>로그인 중...';
-  try {
-    _session = await authSignIn(id, pw);
-    saveSession(_session);
-    // 아이디 기억하기 (비번은 저장 안 함)
-    try {
-      if (document.getElementById('lg-remember').checked) localStorage.setItem('nc_admin_saved_id', id);
-      else localStorage.removeItem('nc_admin_saved_id');
-    } catch(_) {}
-    document.getElementById('lg-pw').value = '';
-    document.getElementById('lg-msg').className = 'msg';
-    await afterLogin();
-  } catch(e) {
-    showMsg('lg-msg', '아이디 또는 비밀번호가 올바르지 않아요', 'error');
-  }
-  btn.disabled = false; btn.textContent = '로그인';
-}
-
-async function afterLogin() {
-  const uname = currentUsername();
-  window._adminRole = (uname === MASTER_ID) ? 'master' : 'viewer';
-  window._adminUnlocked = true;
-  resetEditUI();
-  const badge = document.getElementById('role-badge');
-  if (badge) badge.textContent = (window._adminRole === 'master') ? '[마스터]' : '[관리자]';
-  const whoEl = document.getElementById('cp-who'); if (whoEl) whoEl.textContent = uname;
-  _perm = (window._adminRole === 'viewer') ? await fetchPerm(uname) : JSON.parse(JSON.stringify(DEFAULT_PERM));
-  document.getElementById('login-gate').style.display = 'none';
-  applyRoleVisibility();
-  loadSites();
-  if (canSeeTab('manage')) loadManageSites();
-  if (canSeeTab('list')) loadList();
-  if (canSeeTab('payslip')) loadPaySlipSites();
-  if (canSeeTab('toejik')) loadToejikSites();
-  if (canSeeTab('docs')) loadDocsSites();
-  if (canSeeTab('upload')) loadUploadSites();
-  if (isMaster()) loadPermUI();
-  revealWorkerAdminBox();
-  showTab('worker');
-}
-
-function normalizePerm(p) {
-  const money = !!p.showMoney;
-  return {
-    tabs: Object.assign({}, DEFAULT_PERM.tabs, p.tabs || {}),
-    showWage: p.showWage !== undefined ? !!p.showWage : money,
-    showPay:  p.showPay  !== undefined ? !!p.showPay  : money,
-    allowEdit: !!p.allowEdit,
-    sites: Array.isArray(p.sites) ? p.sites : []
-  };
-}
-
-// 특정 보기권한 아이디의 권한 설정을 가져온다 (없으면 예전 공용 설정 → 기본값)
-async function fetchPerm(username) {
-  try {
-    let rows = await db('GET', 'app_settings', null, `key=eq.admin_perm:${encodeURIComponent(username)}&select=value`);
-    if (rows && rows.length && rows[0].value) return normalizePerm(JSON.parse(rows[0].value));
-    // 이 아이디만의 설정이 아직 없으면 → 예전 공용 설정을 참고하되, 수정 권한은 안 물려줌
-    rows = await db('GET', 'app_settings', null, 'key=eq.admin_perm&select=value');
-    if (rows && rows.length && rows[0].value) {
-      const p = normalizePerm(JSON.parse(rows[0].value));
-      p.allowEdit = false;   // 예전 공용 설정에서 수정권한은 물려받지 않음 (마스터가 명시적으로 켜야 함)
-      return p;
-    }
-  } catch(_) {}
-  return JSON.parse(JSON.stringify(DEFAULT_PERM));
-}
-
 function getAdminPass() { return _masterPass || localStorage.getItem(ADMIN_KEY) || '0000'; }
 function isMaster() { return window._adminRole === 'master'; }
-function canEdit() { return window._adminRole === 'master'; }
+function canEdit() { return window._adminRole === 'master' || (window._adminRole === 'viewer' && _perm.allowEdit); }
 function requireMaster(msg) { if (!isMaster()) { alert(msg || '이 기능은 마스터 비밀번호로만 사용할 수 있어요.'); return false; } return true; }
 function requireEdit() { if (!canEdit()) { alert('보기 전용 권한이라 수정할 수 없어요.'); return false; } return true; }
 function visibleSites(sites) {
@@ -666,7 +515,7 @@ function visibleSites(sites) {
 }
 function canSeeTab(t) {
   if (window._adminRole === 'master') return true;
-  if (window._adminRole === 'viewer') { if (t === 'settings') return false; if (t === 'worker') return true; return !!_perm.tabs[t]; }
+  if (window._adminRole === 'viewer') { if (t === 'settings') return false; return !!_perm.tabs[t]; }
   return false;
 }
 
@@ -686,31 +535,29 @@ async function loadAuthConfig() {
 
 function setAdminPass(p) { _masterPass = p; localStorage.setItem(ADMIN_KEY, p); }
 function confirmWithPass(msg) {
-  if (!isMaster()) { alert('이 기능은 마스터(admin)만 사용할 수 있어요.'); return false; }
-  return confirm(msg + '\n\n정말 진행할까요? (복구 불가)');
+  const p = prompt(msg + '\n\n실행하려면 마스터 비밀번호를 입력하세요:');
+  if (p === null) return false; // 취소
+  if (p !== getAdminPass()) { alert('마스터 비밀번호가 일치하지 않아 취소됐어요.'); return false; }
+  return true;
 }
 
 // 전화번호 정규화 (하이픈 제거, 숫자만)
 function normalizePhone(p) { return String(p || '').replace(/[^0-9]/g, ''); }
 
-async function db(method, table, body, params, _retried) {
+async function db(method, table, body, params) {
   let url = `${SUPA_URL}/rest/v1/${table}`;
   if (params) url += '?' + params;
   const res = await fetch(url, {
     method,
     headers: {
       'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + authToken(),
+      'Authorization': 'Bearer ' + SUPA_KEY,
       'Content-Type': 'application/json',
       'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  // 세션 만료(401) → 한 번 자동 갱신 후 재시도
-  if (res.status === 401 && !_retried && _session && await restoreSession()) {
-    return db(method, table, body, params, true);
-  }
-  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || JSON.stringify(e)); }
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || JSON.stringify(e)); }
   if (res.status === 204 || method === 'PATCH' || method === 'DELETE') return null;
   return res.json();
 }
@@ -758,19 +605,22 @@ function applyRoleVisibility() {
   });
   document.body.classList.toggle('hide-wage', window._adminRole === 'viewer' && !_perm.showWage);
   document.body.classList.toggle('hide-pay', window._adminRole === 'viewer' && !_perm.showPay);
-  document.body.classList.toggle('view-readonly', window._adminRole === 'viewer');
+  document.body.classList.toggle('view-readonly', window._adminRole === 'viewer' && !_perm.allowEdit);
 }
 
 function adminLock() {
   window._adminUnlocked = false;
   window._adminRole = null;
-  clearSession();
-  resetEditUI();
+  ['worker','upload','manage','list','stats','payslip','toejik','docs','settings'].forEach(tab => {
+    const lock = document.getElementById(`${tab}-lock`);
+    const content = document.getElementById(`${tab}-content`);
+    if (lock) lock.style.display = 'block';
+    if (content) content.style.display = 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.style.display = '');
   document.body.classList.remove('hide-wage', 'hide-pay', 'view-readonly');
-  const g = document.getElementById('login-gate');
-  if (g) g.style.display = 'flex';
-  const idEl = document.getElementById('lg-id'); if (idEl) idEl.value = '';
-  const pwEl = document.getElementById('lg-pw'); if (pwEl) pwEl.value = '';
+  revealWorkerAdminBox();
+  showTab('worker');
 }
 
 function revealWorkerAdminBox() {
@@ -778,16 +628,7 @@ function revealWorkerAdminBox() {
   const content = document.getElementById('worker-content');
   if (lock) lock.style.display = window._adminUnlocked ? 'none' : 'block';
   if (content) content.style.display = window._adminUnlocked ? 'block' : 'none';
-  // "작업자 이력 표시" 카드: 마스터는 항상, 보기권한자는 '공수조회' 권한이 켜졌을 때만
-  const showHistCard = isMaster() || (window._adminRole === 'viewer' && !!_perm.tabs.worker);
-  const box = document.getElementById('worker-admin-box');
-  if (box) box.style.display = showHistCard ? 'block' : 'none';
-  // "내 비밀번호 변경" 카드: 보기권한자에게만 (마스터는 설정 탭에서 바꿈)
-  const myPw = document.getElementById('myPwCard');
-  if (myPw) myPw.style.display = (window._adminRole === 'viewer') ? 'block' : 'none';
-  const mypwWho = document.getElementById('mypw-who');
-  if (mypwWho) mypwWho.textContent = currentUsername();
-  if (window._adminUnlocked && showHistCard) refreshHistUI();
+  if (window._adminUnlocked) refreshHistUI();
 }
 
 async function loadUploadSites() {
@@ -829,7 +670,7 @@ function getHistoryMode() { return _histMode; }
 async function saveSetting(key, value) {
   const res = await fetch(`${SUPA_URL}/rest/v1/app_settings?on_conflict=key`, {
     method: 'POST',
-    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + authToken(), 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify({ key, value })
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || '저장 실패'); }
@@ -910,84 +751,70 @@ async function refreshHistUI() {
   if (_histMode === 'period') { await loadHistSites(); await loadHistMonths(); }
 }
 
-const PERM_TAB_LABELS = { worker:'작업자 이력표시', list:'인원목록', payslip:'명세서', toejik:'퇴직공제', docs:'서류', manage:'관리', upload:'업로드' };
-async function loadPermUI() {
-  const idEl = document.getElementById('pm-viewid');
-  const vid = (idEl && idEl.value.trim().toLowerCase()) || 'iddcjh';
-  const p = await fetchPerm(vid);
-  const box = document.getElementById('pm-tabs');
-  if (box) {
-    box.innerHTML = '';
-    Object.keys(PERM_TAB_LABELS).forEach(t => {
-      const checked = p.tabs[t] ? 'checked' : '';
-      box.innerHTML += `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="pm-tab" data-tab="${t}" ${checked} style="transform:scale(1.3);flex:none;"><span>${PERM_TAB_LABELS[t]}</span></label>`;
-    });
-  }
-  const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!p.showWage;
-  const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!p.showPay;
-  const sbox = document.getElementById('pm-sites');
-  if (sbox) {
-    sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중…</div>';
-    db('GET', 'work_records', null, 'select=site_name').then(data => {
-      const allSites = [...new Set(data.map(d => d.site_name))].sort();
-      if (!allSites.length) { sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">현장 없음</div>'; return; }
-      sbox.innerHTML = allSites.map(s => {
-        const ck = (p.sites || []).includes(s) ? 'checked' : '';
-        const sEsc = s.replace(/"/g, '&quot;');
-        return `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" class="pm-site" value="${sEsc}" ${ck} style="transform:scale(1.3);flex:none;"><span>${s}</span></label>`;
-      }).join('');
-    }).catch(() => { sbox.innerHTML = '<div style="color:#c62828;font-size:13px;">현장 목록 불러오기 실패</div>'; });
-  }
+const PERM_TAB_LABELS = { worker:'공수조회', list:'인원목록', payslip:'명세서', toejik:'퇴직공제', docs:'서류', manage:'관리', upload:'업로드' };
+function loadPermUI() {
+  loadAuthConfig().then(() => {
+    const vp = document.getElementById('pm-viewpass'); if (vp) vp.value = _viewerPass || '';
+    const box = document.getElementById('pm-tabs');
+    if (box) {
+      box.innerHTML = '';
+      Object.keys(PERM_TAB_LABELS).forEach(t => {
+        const checked = _perm.tabs[t] ? 'checked' : '';
+        box.innerHTML += `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="pm-tab" data-tab="${t}" ${checked} style="transform:scale(1.3);flex:none;"><span>${PERM_TAB_LABELS[t]}</span></label>`;
+      });
+    }
+    const mw = document.getElementById('pm-wage'); if (mw) mw.checked = !!_perm.showWage;
+    const mp = document.getElementById('pm-pay'); if (mp) mp.checked = !!_perm.showPay;
+    const e = document.getElementById('pm-edit'); if (e) e.checked = !!_perm.allowEdit;
+    const sbox = document.getElementById('pm-sites');
+    if (sbox) {
+      sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중…</div>';
+      db('GET', 'work_records', null, 'select=site_name').then(data => {
+        const allSites = [...new Set(data.map(d => d.site_name))].sort();
+        if (!allSites.length) { sbox.innerHTML = '<div style="color:#aaa;font-size:13px;">현장 없음</div>'; return; }
+        sbox.innerHTML = allSites.map(s => {
+          const ck = (_perm.sites || []).includes(s) ? 'checked' : '';
+          const sEsc = s.replace(/"/g, '&quot;');
+          return `<label style="font-weight:400;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" class="pm-site" value="${sEsc}" ${ck} style="transform:scale(1.3);flex:none;"><span>${s}</span></label>`;
+        }).join('');
+      }).catch(() => { sbox.innerHTML = '<div style="color:#c62828;font-size:13px;">현장 목록 불러오기 실패</div>'; });
+    }
+  });
 }
 
 async function savePerm() {
   if (!requireMaster()) return;
-  const vid = (document.getElementById('pm-viewid').value.trim().toLowerCase());
-  if (!vid) { showMsg('pm-msg', '보기권한 아이디를 입력하세요', 'error'); return; }
-  if (vid === MASTER_ID) { showMsg('pm-msg', `'${MASTER_ID}'는 마스터라 항상 전체 권한이에요. 다른 아이디를 입력하세요`, 'error'); return; }
+  const viewpass = document.getElementById('pm-viewpass').value.trim();
+  if (viewpass && viewpass === getAdminPass()) { showMsg('pm-msg', '보기 비밀번호는 마스터 비밀번호와 다르게 정해주세요', 'error'); return; }
   const tabs = {};
   document.querySelectorAll('.pm-tab').forEach(c => { tabs[c.dataset.tab] = c.checked; });
-  // '작업자 이력표시'(worker)는 체크한 대로 저장 (강제 켜기 없음)
-  const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: false, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
+  tabs.worker = true; // 공수조회는 기본 허용
+  const perm = { tabs, showWage: document.getElementById('pm-wage').checked, showPay: document.getElementById('pm-pay').checked, allowEdit: document.getElementById('pm-edit').checked, sites: [...document.querySelectorAll('.pm-site:checked')].map(c => c.value) };
   try {
-    await saveSetting('admin_perm:' + vid, JSON.stringify(perm));
-    showMsg('pm-msg', `✅ 저장됐어요 — '${vid}'로 로그인하면 위 설정대로 보여요`, 'success');
+    await saveSetting('admin_viewer_pass', viewpass);
+    await saveSetting('admin_perm', JSON.stringify(perm));
+    _viewerPass = viewpass; _perm = perm;
+    showMsg('pm-msg', viewpass ? '✅ 저장됐어요 — 보기 비밀번호로 위 설정대로 보여요' : '✅ 저장됐어요 (보기 비밀번호 사용 안 함)', 'success');
   } catch(e) {
     showMsg('pm-msg', `⚠️ 저장 실패: ${e.message}`, 'error');
   }
 }
 
-async function changePassword() { return doChangePassword('cp-old', 'cp-new', 'cp-new2', 'cp-msg'); }
-
-async function doChangePassword(oldId, newId, new2Id, msgId) {
-  const oldP = document.getElementById(oldId).value;
-  const newP = document.getElementById(newId).value;
-  const newP2 = document.getElementById(new2Id).value;
-  if (!newP) return showMsg(msgId, '새 비밀번호를 입력해주세요', 'error');
-  if (newP.length < 6) return showMsg(msgId, '새 비밀번호는 6자 이상으로 정해주세요', 'error');
-  if (newP !== newP2) return showMsg(msgId, '새 비밀번호가 일치하지 않아요', 'error');
-  // 현재 비밀번호 확인 (다시 로그인 시도)
-  try {
-    await authSignIn(currentUsername(), oldP);
-  } catch(e) {
-    return showMsg(msgId, '현재 비밀번호가 틀렸어요', 'error');
-  }
-  if (!confirm('로그인 비밀번호를 변경할까요?')) return;
-  try {
-    const res = await fetch(`${SUPA_URL}/auth/v1/user`, {
-      method: 'PUT',
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + authToken(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: newP })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.msg || data.error_description || data.error || '변경 실패');
-    document.getElementById(oldId).value = '';
-    document.getElementById(newId).value = '';
-    document.getElementById(new2Id).value = '';
-    showMsg(msgId, '비밀번호가 변경됐어요!', 'success');
-  } catch(e) {
-    showMsg(msgId, '변경 실패: ' + e.message, 'error');
-  }
+function changePassword() {
+  if (!requireMaster()) return;
+  const oldP = document.getElementById('cp-old').value;
+  const newP = document.getElementById('cp-new').value;
+  const newP2 = document.getElementById('cp-new2').value;
+  if (oldP !== getAdminPass()) return showMsg('cp-msg', '현재 비밀번호가 틀렸어요', 'error');
+  if (!newP) return showMsg('cp-msg', '새 비밀번호를 입력해주세요', 'error');
+  if (newP !== newP2) return showMsg('cp-msg', '새 비밀번호가 일치하지 않아요', 'error');
+  if (!confirm('마스터 비밀번호를 변경할까요?')) return;
+  setAdminPass(newP);
+  saveSetting('admin_master_pass', newP).catch(() => {});
+  document.getElementById('cp-old').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-new2').value = '';
+  showMsg('cp-msg', '마스터 비밀번호가 변경됐어요!', 'success');
 }
 
 async function renameSite() {
@@ -1413,14 +1240,6 @@ async function deleteData() {
 
 let editData = null;
 
-// 로그인/로그아웃 시 관리 편집 화면을 깨끗이 비움 (역할 바뀔 때 옛 화면 잔상 방지)
-function resetEditUI() {
-  editData = null;
-  const r = document.getElementById('ed-result'); if (r) r.innerHTML = '';
-  const s = document.getElementById('ed-site'); if (s) s.value = '';
-  const m = document.getElementById('ed-month'); if (m) m.innerHTML = '<option value="">-- 월 선택 --</option>';
-}
-
 async function loadEditMonths() {
   const site = document.getElementById('ed-site').value;
   const sel = document.getElementById('ed-month');
@@ -1836,48 +1655,24 @@ async function saveEditTable() {
   showMsg('ed-msg', fail===0 ? `${ok}명 저장 완료!` : `저장 ${ok}명 / 실패 ${fail}명`, fail===0?'success':'error');
 }
 
-let _twMatches = [];
-
-function fmtPhone(p) {
-  p = String(p || '').replace(/[^0-9]/g, '');
-  if (p.length === 11) return p.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-  if (p.length === 10) return p.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-  return p || '(번호 없음)';
-}
-
 async function adminWorkerTest() {
   const name = document.getElementById('tw-name').value.trim();
   const phone = normalizePhone(document.getElementById('tw-phone').value);
+  const pw = document.getElementById('tw-pw').value.trim();
   const resultEl = document.getElementById('w-result');
-  if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
-  if (!name) return showMsg('tw-msg', '이름을 입력하세요', 'error');
+  if (resultEl) resultEl.style.display = 'none';
+  if (!name || !phone) return showMsg('tw-msg', '이름과 핸드폰번호를 입력하세요', 'error');
   try {
     await loadHistSettings();
     if (_histMode === 'none') return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (조회 차단 상태)', 'error');
-    let params = `name=eq.${encodeURIComponent(name)}&select=id,name,job_type,locked,phone&order=phone`;
-    if (phone) params = `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,locked,phone`;
-    const workers = await db('GET', 'workers', null, params);
-    if (!workers || workers.length === 0) return showMsg('tw-msg', '명단에 없는 이름이에요', 'error');
-    if (workers.length === 1) { await previewWorker(workers[0]); return; }
-    // 동명이인 → 전화번호로 선택
-    _twMatches = workers;
-    showMsg('tw-msg', `같은 이름이 ${workers.length}명 있어요. 아래에서 한 명을 선택하세요 ↓`, 'success');
-    const wrap = document.getElementById('w-result');
-    wrap.innerHTML = `<div class="card"><div class="card-title">이름이 같은 작업자 (${workers.length}명)</div>` +
-      workers.map((w, i) => `<div class="worker-row" style="display:flex;justify-content:space-between;align-items:center;">
-        <div><strong>${w.name}</strong> <span style="color:#888;font-size:13px;">${fmtPhone(w.phone)}</span>${w.job_type ? ` <span class="badge-job" style="margin:0 0 0 6px;">${w.job_type}</span>` : ''}${w.locked ? ' <span style="color:#c62828;font-size:12px;">🔒잠김</span>' : ''}</div>
-        <button class="btn" style="width:auto;margin:0;padding:6px 12px;font-size:13px;" onclick="previewWorker(_twMatches[${i}])">이 사람 보기</button>
-      </div>`).join('') + `</div>`;
-    wrap.style.display = 'block';
-  } catch(e) { showMsg('tw-msg', e.message, 'error'); }
-}
-
-async function previewWorker(worker) {
-  try {
+    const workers = await db('GET', 'workers', null, `name=eq.${encodeURIComponent(name)}&phone=eq.${phone}&select=id,name,job_type,password,locked`);
+    if (!workers || workers.length === 0) return showMsg('tw-msg', '명단에 없는 이름/번호예요', 'error');
+    const worker = workers[0];
     if (worker.locked) return showMsg('tw-msg', '이 작업자는 비밀번호 잠금 상태예요 (인원목록에서 초기화 필요)', 'error');
+    if (worker.password && pw && pw !== String(worker.password)) return showMsg('tw-msg', '비밀번호가 일치하지 않아요', 'error');
     if (_histMode === 'period' && (!_histSite || !_histMonth)) return showMsg('tw-msg', '작업자 화면 → "아직 출력 작업 중입니다" (현장·월 미선택)', 'error');
     let records = await db('GET', 'work_records', null, `worker_id=eq.${worker.id}&select=daily_work,total_days,total_work,site_name,year_month,red_days,job_type&order=year_month.desc`);
-    if (!records || records.length === 0) return showMsg('tw-msg', `${worker.name}님(${fmtPhone(worker.phone)})은 근무 기록이 없어요`, 'error');
+    if (!records || records.length === 0) return showMsg('tw-msg', '근무 기록이 없어요', 'error');
     if (_histMode === 'period') {
       records = records.filter(r => r.site_name === _histSite && r.year_month === _histMonth);
       if (!records.length) return showMsg('tw-msg', '해당 기간 근무 기록이 없어요', 'error');
@@ -2626,25 +2421,18 @@ function getPaySlipStyle() {
 const now = new Date();
 const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 document.getElementById('u-month').value = ym;
+loadHistSettings();
+loadSites();
+loadAuthConfig();
 
-// 처음 열릴 때: 저장된 로그인 세션이 있으면 자동 입장, 없으면 로그인 화면
-(async function initAdmin() {
-  // 기억해둔 아이디가 있으면 미리 채우기 (비번은 저장 안 함)
-  try {
-    const savedId = localStorage.getItem('nc_admin_saved_id');
-    if (savedId) {
-      const idEl = document.getElementById('lg-id'); if (idEl) idEl.value = savedId;
-      const rm = document.getElementById('lg-remember'); if (rm) rm.checked = true;
-      const pwEl = document.getElementById('lg-pw'); if (pwEl) pwEl.focus();
-    }
-  } catch(_) {}
-  const restored = await restoreSession();
-  if (restored) {
-    try { await afterLogin(); return; }
-    catch(e) { clearSession(); }
-  }
-  const g = document.getElementById('login-gate');
-  if (g) g.style.display = 'flex';
+// 브라우저가 비밀번호를 미리 채워 넣는 것 방지
+(function clearAutofilledPw() {
+  const pws = () => Array.from(document.querySelectorAll('input[type="password"]'));
+  const wipe = () => pws().forEach(el => { if (!el.dataset.typed) el.value = ''; });
+  pws().forEach(el => el.addEventListener('input', () => { el.dataset.typed = '1'; }));
+  wipe();
+  [100, 400, 900].forEach(t => setTimeout(wipe, t));
+  window.addEventListener('pageshow', wipe);
 })();
 </script>
 </body>
