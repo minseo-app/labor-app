@@ -119,7 +119,7 @@ body.hide-pay .pay-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-D (비번 입력 수정)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-E (자동입력차단 해제)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -138,7 +138,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="worker-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="aw-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="aw-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('worker')">확인</button>
       <div id="aw-msg" class="msg"></div>
       <p style="font-size:12px;color:#999;margin-top:12px;">작업자는 <a href="labor-app.html" style="color:#185FA5;">작업자용 페이지</a>에서 조회하세요.</p>
@@ -173,7 +173,7 @@ body.hide-pay .pay-cell { display: none !important; }
         <label>핸드폰번호 (숫자만)</label>
         <input type="tel" id="tw-phone" placeholder="01012345678">
         <label>비밀번호 (선택)</label>
-        <input type="password" id="tw-pw" inputmode="numeric" maxlength="6" placeholder="비워도 됨" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+        <input type="password" id="tw-pw" inputmode="numeric" maxlength="6" placeholder="비워도 됨">
         <button class="btn primary" style="margin-top:10px;" onclick="adminWorkerTest()">🔍 테스트 조회</button>
         <div id="tw-msg" class="msg"></div>
       </div>
@@ -186,7 +186,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="upload-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="al-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="al-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('upload')">확인</button>
       <div id="al-msg" class="msg"></div>
     </div>
@@ -235,7 +235,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="manage-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="am-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="am-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('manage')">확인</button>
       <div id="am-msg" class="msg"></div>
     </div>
@@ -274,7 +274,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="list-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="alist-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="alist-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('list')">확인</button>
       <div id="alist-msg" class="msg"></div>
     </div>
@@ -297,7 +297,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="stats-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="astats-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="astats-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('stats')">확인</button>
       <div id="astats-msg" class="msg"></div>
     </div>
@@ -321,7 +321,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="payslip-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="apay-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="apay-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('payslip')">확인</button>
       <div id="apay-msg" class="msg"></div>
     </div>
@@ -359,7 +359,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="toejik-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="atj-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="atj-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('toejik')">확인</button>
       <div id="atj-msg" class="msg"></div>
     </div>
@@ -383,7 +383,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="docs-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="adoc-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="adoc-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('docs')">확인</button>
       <div id="adoc-msg" class="msg"></div>
     </div>
@@ -409,7 +409,7 @@ body.hide-pay .pay-cell { display: none !important; }
     <div id="settings-lock" class="admin-lock">
       <div class="lock-icon">🔒</div>
       <p>관리자 전용 메뉴입니다</p>
-      <input type="password" id="aset-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+      <input type="password" id="aset-pass" placeholder="관리자 비밀번호" style="margin-bottom:0;">
       <button class="btn primary" onclick="adminUnlock('settings')">확인</button>
       <div id="aset-msg" class="msg"></div>
     </div>
@@ -424,11 +424,11 @@ body.hide-pay .pay-cell { display: none !important; }
         </div>
         <div class="card-body" id="body-pass" style="display:none;">
           <label>현재 비밀번호</label>
-          <input type="password" id="cp-old" placeholder="현재 마스터 비밀번호" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+          <input type="password" id="cp-old" placeholder="현재 마스터 비밀번호">
           <label>새 비밀번호</label>
-          <input type="password" id="cp-new" placeholder="새 비밀번호" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+          <input type="password" id="cp-new" placeholder="새 비밀번호">
           <label>새 비밀번호 확인</label>
-          <input type="password" id="cp-new2" placeholder="새 비밀번호 다시 입력" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+          <input type="password" id="cp-new2" placeholder="새 비밀번호 다시 입력">
           <button class="btn primary" onclick="changePassword()">비밀번호 변경</button>
           <div id="cp-msg" class="msg"></div>
         </div>
@@ -2434,20 +2434,6 @@ document.getElementById('u-month').value = ym;
 loadHistSettings();
 loadSites();
 loadAuthConfig();
-
-// 브라우저가 비밀번호를 미리 채워 넣는 것 방지
-(function clearAutofilledPw() {
-  const pws = Array.from(document.querySelectorAll('input[type="password"]'));
-  // 사용자가 손대면(입력/터치/포커스) 그 칸은 다시는 건드리지 않음
-  const mark = el => { el.dataset.touched = '1'; };
-  pws.forEach(el => {
-    ['input','keydown','focus','paste','change'].forEach(ev => el.addEventListener(ev, () => mark(el)));
-  });
-  // 페이지가 열릴 때 딱 한 번만, 아직 손대지 않은 칸을 비움
-  const wipeOnce = () => pws.forEach(el => { if (!el.dataset.touched) el.value = ''; });
-  wipeOnce();
-  setTimeout(wipeOnce, 150);
-})();
 </script>
 </body>
 </html>
