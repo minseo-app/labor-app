@@ -54,6 +54,12 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 .edit-table .sticky-col { position: sticky; left: 0; background: #fafafa; z-index: 1; min-width: 32px; width: 32px; padding: 5px 4px; }
 .edit-table th.sticky-col { z-index: 3; }
 .edit-table th:nth-child(2), .edit-table td:nth-child(2) { position: sticky; left: 32px; background: #fafafa; z-index: 1; min-width: 34px; width: 34px; }
+/* 체크한 줄 강조 표시 */
+.edit-table tr.row-sel td { background: #fff8e1; }
+.edit-table tr.row-sel .edit-cell { background: #fff8e1; }
+.edit-table tr.row-sel td.sticky-col, .edit-table tr.row-sel td:nth-child(2) { background: #ffe9a8; }
+.edit-table tr.row-sel .edit-cell.red-cell { background: #ffcdd2; }
+.edit-table tr.row-sel td:nth-child(3) { font-weight: 800; color: #8a5a00; }
 .edit-table th:nth-child(3), .edit-table td:nth-child(3) { position: sticky; left: 66px; background: #fff; z-index: 1; min-width: 56px; width: 56px; box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
 .edit-table th:nth-child(2), .edit-table th:nth-child(3) { z-index: 3; background: #f0f0f0; }
 .day-table td.row-label { font-weight: 600; color: #555; background: #fafafa; white-space: nowrap; padding: 5px 8px; }
@@ -137,7 +143,7 @@ body.hide-pay .pay-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span id="role-badge" style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-F (아이디 로그인 복구)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-G (선택 줄 강조)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -1702,7 +1708,15 @@ function renderJobDaySummary(listArg) {
   box.innerHTML = html;
 }
 
+function syncRowHighlight() {
+  document.querySelectorAll('.ed-check').forEach(c => {
+    const tr = c.closest('tr');
+    if (tr) tr.classList.toggle('row-sel', c.checked);
+  });
+}
+
 function updateSelSum() {
+  syncRowHighlight();
   if (!editData) return;
   const { month, list } = editData;
   const [yr, mo] = month.split('-').map(Number);
