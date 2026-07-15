@@ -40,7 +40,7 @@ input:focus, select:focus { border-color: #185FA5; background: #fff; }
 <body>
 <div class="container">
   <h1>⚒️ 노무비 공수 조회</h1>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0715-A (비번 자동입력 차단)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.8rem 0 1rem;">버전 0715-B (비번 입력 수정)</div>
 
   <div class="card">
     <div class="card-title">본인 공수 조회</div>
@@ -240,11 +240,14 @@ loadHistSettings();
 (function clearAutofilledPw() {
   const pw = document.getElementById('w-pw');
   if (!pw) return;
-  const wipe = () => { if (!pw.dataset.typed) pw.value = ''; };
-  pw.addEventListener('input', () => { pw.dataset.typed = '1'; });
-  wipe();
-  [100, 400, 900].forEach(t => setTimeout(wipe, t));
-  window.addEventListener('pageshow', wipe);
+  // 사용자가 손대면 그 뒤로는 절대 건드리지 않음
+  ['input','keydown','focus','paste','change'].forEach(ev =>
+    pw.addEventListener(ev, () => { pw.dataset.touched = '1'; })
+  );
+  // 페이지가 열릴 때 딱 한 번만 비움
+  const wipeOnce = () => { if (!pw.dataset.touched) pw.value = ''; };
+  wipeOnce();
+  setTimeout(wipeOnce, 150);
 })();
 </script>
 </body>
