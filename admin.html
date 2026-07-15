@@ -119,7 +119,7 @@ body.hide-pay .pay-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-C (선택 줄 색표시)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-D (비번 입력 수정)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -2437,12 +2437,16 @@ loadAuthConfig();
 
 // 브라우저가 비밀번호를 미리 채워 넣는 것 방지
 (function clearAutofilledPw() {
-  const pws = () => Array.from(document.querySelectorAll('input[type="password"]'));
-  const wipe = () => pws().forEach(el => { if (!el.dataset.typed) el.value = ''; });
-  pws().forEach(el => el.addEventListener('input', () => { el.dataset.typed = '1'; }));
-  wipe();
-  [100, 400, 900].forEach(t => setTimeout(wipe, t));
-  window.addEventListener('pageshow', wipe);
+  const pws = Array.from(document.querySelectorAll('input[type="password"]'));
+  // 사용자가 손대면(입력/터치/포커스) 그 칸은 다시는 건드리지 않음
+  const mark = el => { el.dataset.touched = '1'; };
+  pws.forEach(el => {
+    ['input','keydown','focus','paste','change'].forEach(ev => el.addEventListener(ev, () => mark(el)));
+  });
+  // 페이지가 열릴 때 딱 한 번만, 아직 손대지 않은 칸을 비움
+  const wipeOnce = () => pws.forEach(el => { if (!el.dataset.touched) el.value = ''; });
+  wipeOnce();
+  setTimeout(wipeOnce, 150);
 })();
 </script>
 </body>
