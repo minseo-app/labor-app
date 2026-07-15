@@ -150,7 +150,7 @@ body.hide-pay .pay-cell { display: none !important; }
 <div class="container">
   <h1>⚒️ 노무비 공수 조회 <span id="role-badge" style="font-size:13px;color:#185FA5;font-weight:400;">[관리자]</span></h1>
   <div style="text-align:center;margin-bottom:1rem;"><a href="labor-app.html" style="font-size:13px;color:#888;text-decoration:none;">→ 작업자용 페이지로</a></div>
-  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-H (선택 줄·날짜 세로 강조)</div>
+  <div style="text-align:center;font-size:11px;color:#cbcbcb;margin:-0.6rem 0 0.8rem;">버전 0715-I (일당 쉼표 표시)</div>
   <div class="tab-bar" style="margin-bottom:5px;">
     <div class="tab active" data-tab="worker" onclick="showTab('worker')">공수조회</div>
     <div class="tab" data-tab="manage" onclick="showTab('manage')">관리</div>
@@ -1510,7 +1510,7 @@ function renderEditTable() {
       <td style="color:#888;">${p.seq||''}</td>
       <td style="font-weight:600;white-space:nowrap;">${p.name}</td>
       <td style="font-size:11px;color:#888;white-space:nowrap;">${p.job||''}</td>
-      <td class="edit-cell"><input type="text" value="${p.daily_wage||''}" ${ro?'readonly':`oninput="updateWage(${pi},this.value)"`} style="width:64px;border:none;background:transparent;text-align:right;font-size:12px;color:#e65100;font-weight:600;"></td>`;
+      <td class="edit-cell"><input type="text" inputmode="numeric" value="${p.daily_wage ? Number(p.daily_wage).toLocaleString('ko-KR') : ''}" ${ro?'readonly':`oninput="wageInput(${pi},this)"`} style="width:72px;border:none;background:transparent;text-align:right;font-size:12px;color:#e65100;font-weight:600;"></td>`;
     for (let d = 1; d <= daysInMonth; d++) {
       const key = String(d);
       const v = p.daily_work[key] || '';
@@ -1809,6 +1809,19 @@ function refreshAmount(pi) {
   const amt = (p.daily_wage||0) * t.work;
   const el = document.getElementById(`ed-amt-${pi}`);
   if (el) el.textContent = amt ? amt.toLocaleString() : '';
+}
+
+// 일당 칸: 치는 대로 3자리마다 쉼표. 저장은 숫자만 들어간다.
+function wageInput(pi, el) {
+  const caret = el.selectionStart;
+  const digitsBefore = el.value.slice(0, caret).replace(/[^0-9]/g, '').length;
+  const digits = el.value.replace(/[^0-9]/g, '');
+  const fmt = digits ? Number(digits).toLocaleString('ko-KR') : '';
+  el.value = fmt;
+  let pos = 0, seen = 0;
+  while (pos < fmt.length && seen < digitsBefore) { if (fmt.charCodeAt(pos) >= 48 && fmt.charCodeAt(pos) <= 57) seen++; pos++; }
+  try { el.setSelectionRange(pos, pos); } catch (_) {}
+  updateWage(pi, digits);
 }
 
 function updateWage(pi, val) {
